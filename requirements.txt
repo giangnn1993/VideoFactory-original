@@ -1,0 +1,13 @@
+# essentials
+requests
+stable-ts
+pysubs2
+moviepy
+# news
+gnews
+newspaper3k
+# automatic1111
+webuiapi
+# llm
+langchain
+g4f
