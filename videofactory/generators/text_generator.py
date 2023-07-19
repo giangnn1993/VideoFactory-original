@@ -72,18 +72,18 @@ class TextGenerator:
 #     print('Error occurred while generating chat response')
 
 
-# Usage #2:
+# # Usage #2:
 # from _prompts import examples_quote, prefix_quote
 # # To use the TextGenerator class to create an image prompt, create an instance:
-# llm1 = TextGenerator('g4f')
-# # # Then, call the generate_chat_responses function with a query:
+# llm2 = TextGenerator('g4f')
+# # Then, call the generate_chat_responses function with a query:
 # query = "Family"
-# prompt = llm1.create_few_shot_prompt_template(
+# prompt = llm2.create_few_shot_prompt_template(
 #     query=query,
 #     examples=examples_quote,
 #     prefix=prefix_quote
 # )
-# responses = llm1.generate_chat_responses(query=prompt)
+# responses = llm2.generate_chat_responses(query=prompt)
 # # Iterate over the responses and print the response and provider name
 # if responses is not None:
 #     for response, provider_name in responses:
@@ -96,15 +96,15 @@ class TextGenerator:
 # # Usage #3:
 # from _prompts import examples_image, prefix_image
 # # To use the TextGenerator class to create an image prompt, create an instance:
-# llm1 = TextGenerator('g4f')
-# # # Then, call the generate_chat_responses function with a query:
+# llm3 = TextGenerator('g4f')
+# # Then, call the generate_chat_responses function with a query:
 # query = "A human male merchant"
-# prompt = llm1.create_few_shot_prompt_template(
+# prompt = llm3.create_few_shot_prompt_template(
 #     query=query,
 #     examples=examples_image,
 #     prefix=prefix_image
 # )
-# responses = llm1.generate_chat_responses(query=prompt)
+# responses = llm3.generate_chat_responses(query=prompt)
 # # Iterate over the responses and print the response and provider name
 # if responses is not None:
 #     for response, provider_name in responses:
