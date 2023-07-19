@@ -16,7 +16,7 @@ except ImportError:
     # Log an error or raise an exception, as appropriate
 
 
-class automaticImage(ImageGenerator):
+class AutomaticImage(ImageGenerator):
     def __init__(self) -> None:
         super().__init__('automatic1111')
 
