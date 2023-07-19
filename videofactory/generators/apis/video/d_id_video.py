@@ -46,6 +46,13 @@ class DidVideo(VideoGenerator):
             image_url: str,
             expression: str = 'neutral',
             intensity: float = 1) -> str:  # a float value between 0 to 1.0
+        """
+        Expressions:
+        - neutral: The default expression each video starts with
+        - happy: Makes the avatar smile, affecting the mouth and eyes
+        - surprise: Makes the avatar raises their eyebrows and open their mouth wider
+        - serious: Makes the avatar firm the eyebrows and toughen the lips to create a more serious tone
+        """
         url = "https://api.d-id.com/talks"
         # Set the headers for the POST request
         headers = {
@@ -134,7 +141,17 @@ class DidVideo(VideoGenerator):
 
     def create_animation(
             self,
-            image_url: str) -> str:
+            image_url: str,
+            driver: str = 'subtle') -> str:
+        """
+        Drivers:
+        - nostalgia: Gentle and slow movements
+        - fun: Funky movements with funny facial expressions
+        - dance: Dancing heads movements
+        - classics: Singing movements | make sure to set "mute": false
+        - subtle:Subtle movements | works best with multiple faces that are close to each other in a single image
+        - stitch: Works best when "stitch": true
+        """
         url = "https://api.d-id.com/animations"
         # Set the headers for the POST request
         headers = {
@@ -144,22 +161,12 @@ class DidVideo(VideoGenerator):
         }
         # Set the payload for the POST request
         payload = {
-            "script": {
-                # bank://nostalgia	Gentle and slow movements
-                # bank://fun	Funky movements with funny facial expressions
-                # bank://dance	Dancing heads movements
-                # bank://classics	Singing movements | make sure to set "mute": false
-                # bank://subtle	Subtle movements | works best with multiple faces that are close to each other in a single image  # noqa
-                # bank://stitch	Works best when "stitch": true
-                "driver_url": "bank://subtle",
-                "subtitles": "false",
-                "ssml": "false",
-            },
             "config": {
-                "stitch": "true",
-                "mute": "true"
+                "result_format": "mp4",
+                "stitch": True
             },
-            "source_url": image_url
+            "source_url": image_url,
+            "driver_url": f'bank://{driver}'
         }
 
         # Make the POST request
