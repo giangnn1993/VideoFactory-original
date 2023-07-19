@@ -36,17 +36,17 @@ class TextGenerator:
         return self.llm.generate_chat_responses(query)
 
 
-# Usage:
-# To use the TextGenerator class, create an instance:
-llm1 = TextGenerator('g4f')
-# Then, call the generate_chat_responses function with a query:
-query = "Tell a joke"
-responses = llm1.generate_chat_responses(query=query)
-# Iterate over the responses and print the response and provider name
+# # Usage:
+# # To use the TextGenerator class, create an instance:
+# llm1 = TextGenerator('g4f')
+# # Then, call the generate_chat_responses function with a query:
+# query = "Tell a joke"
+# responses = llm1.generate_chat_responses(query=query)
+# # Iterate over the responses and print the response and provider name
 
-if responses is not None:
-    for response, provider_name in responses:
-        print("User:", query)
-        print(f'{provider_name}:', response)
-else:
-    print('Error occurred while generating chat response')
+# if responses is not None:
+#     for response, provider_name in responses:
+#         print("User:", query)
+#         print(f'{provider_name}:', response)
+# else:
+#     print('Error occurred while generating chat response')
