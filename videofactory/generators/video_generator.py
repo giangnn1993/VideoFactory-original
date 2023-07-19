@@ -18,19 +18,30 @@ class VideoGenerator:
             raise ValueError(f'Unsupported video generator: {self.vidgen_provider}')
         return VidGenClass(key=self.key)
 
-    def create_talk_video(self, image, audio, **kwargs) -> None:
+    def create_talk_video(self, image, audio, **kwargs) -> str:
         # Upload an image and return the URL
         image_url = self.vidgen.upload_image(image=image)
         # Upload an audio file and return the URL
         audio_url = self.vidgen.upload_audio(audio=audio)
         # Use the returned URLs to create a talking head video and return its id
-        id = self.vidgen.create_talk(image_url=image_url, audio_url=audio_url)
-        time.sleep(10)
-        # Download the video
+        id = self.vidgen.create_talk(image_url=image_url, audio_url=audio_url, **kwargs)
+        return id
+
+    def get_talk(self, id: str, **kwargs):
         self.vidgen.get_talk(id=id, **kwargs)
 
+    def create_animation_video(self, image) -> str:
+        # Upload an image and return the URL
+        image_url = self.vidgen.upload_image(image=image)
+        # Use the returned URL to create a live portrait video and return its id
+        id = self.vidgen.create_animation(image_url=image_url)
+        return id
 
-# # Usage:
+    def get_animation(self, id: str, **kwargs):
+        self.vidgen.get_animation(id=id, **kwargs)
+
+
+# Usage:
 # import os
 # from pathlib import Path
 # # To use the VideoGenerator class, create an instance:
@@ -40,4 +51,7 @@ class VideoGenerator:
 # image_path = str(path / 'assets' / 'images' / '01.png')
 # audio_path = str(path / 'examples' / 'coqui_tts.mp3')
 # output_path = path / 'examples' / 'coqui_tts_d_id_talk.mp4'
-# vidgen1.create_talk_video(image=image_path, audio=audio_path, output_path=output_path)
+# id = vidgen1.create_talk_video(image=image_path, audio=audio_path, expression='serious')
+# time.sleep(10)
+# # Download the video
+# vidgen1.get_talk(id=id, output_path=output_path)

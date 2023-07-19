@@ -43,7 +43,9 @@ class DidVideo(VideoGenerator):
     def create_talk(
             self,
             audio_url: str,
-            image_url: str) -> str:
+            image_url: str,
+            expression: str = 'neutral',
+            intensity: float = 1) -> str:  # a float value between 0 to 1.0
         url = "https://api.d-id.com/talks"
         # Set the headers for the POST request
         headers = {
@@ -64,6 +66,15 @@ class DidVideo(VideoGenerator):
             "config": {
                 "stitch": "true",
                 # "pad_audio": pad_audio
+                "driver_expressions": {
+                    "expressions": [
+                                {
+                                    "start_frame": 0,
+                                    "expression": expression,
+                                    "intensity": intensity
+                                }
+                    ]
+                    }
             },
             "source_url": image_url
         }
