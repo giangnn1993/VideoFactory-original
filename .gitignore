@@ -1,5 +1,11 @@
-__pycache__/
+# Vscode
 .vscode
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
 temp/
 data/output/processed/*
 data/output/processed_videos/*
