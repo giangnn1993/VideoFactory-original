@@ -59,14 +59,15 @@ class gpt4freeLLM(LargeLanguageModel):
             stream = False  # stream = data["stream"]
 
             response = self.generate_chat_response(provider=provider, stream=stream, content=query)
-
             if stream is True:
                 for message in response:
-                    # Append the response and provider name to the list
-                    responses.append((message, provider_name))
+                    if message:
+                        # Append the response and provider name to the list
+                        responses.append((message, provider_name))
             else:
-                # Append the response and provider name to the list
-                responses.append((response, provider_name))
+                if response:
+                    # Append the response and provider name to the list
+                    responses.append((response, provider_name))
 
         return responses
 
