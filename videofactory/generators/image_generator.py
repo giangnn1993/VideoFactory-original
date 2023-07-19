@@ -2,22 +2,22 @@ from apis.image.automatic1111_image import AutomaticImage
 
 
 class ImageGenerator:
-    IMAGE_GENERATOR_CLASSES = {
+    IMGGEN_CLASSES = {
         'automatic1111': AutomaticImage,
     }
 
-    def __init__(self, image_generator_provider):
-        self.image_generator_provider = image_generator_provider
-        self.image_generator = self._create_image_generator_instance()
+    def __init__(self, imggen_provider):
+        self.imggen_provider = imggen_provider
+        self.imggen = self._create_imggen_instance()
 
-    def _create_image_generator_instance(self):
-        ImgGenClass = self.IMAGE_GENERATOR_CLASSES.get(self.image_generator_provider)
+    def _create_imggen_instance(self):
+        ImgGenClass = self.IMGGEN_CLASSES.get(self.imggen_provider)
         if ImgGenClass is None:
-            raise ValueError(f'Unsupported image generator: {self.image_generator_provider}')
+            raise ValueError(f'Unsupported image generator: {self.imggen_provider}')
         return ImgGenClass()
 
     def generate_image_from_text(self, prompt: str, **kwargs):
-        self.image_generator.generate_image_from_text(prompt, **kwargs)
+        self.imggen.generate_image_from_text(prompt, **kwargs)
 
 
 # Usage:
