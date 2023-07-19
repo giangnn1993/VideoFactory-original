@@ -16,9 +16,9 @@ except ImportError:
 class ElevenLabsTTS(TextToSpeech):
     BASE_URL: str = 'https://api.elevenlabs.io/v1/text-to-speech'
 
-    def __init__(self, api_key: str) -> None:
+    def __init__(self, key: str) -> None:
         super().__init__('elevenlabs')
-        self.api_key: str = api_key
+        self.key: str = key
 
     def _get_url(self, voice_id: str) -> str:
         return f'{self.BASE_URL}/{voice_id}?optimize_streaming_latency=0'
@@ -34,7 +34,7 @@ class ElevenLabsTTS(TextToSpeech):
         url: str = self._get_url(voice_id)
         headers: dict = {
             'accept': 'audio/mpeg',
-            'xi-api-key': self.api_key,
+            'xi-api-key': self.key,
             'Content-Type': 'application/json'
         }
         payload: dict = {
@@ -47,7 +47,7 @@ class ElevenLabsTTS(TextToSpeech):
         }
 
         # Make the API request
-        response: requests.Response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload)
 
         # Save the response to a file
         with open(output_path, 'wb') as f:
@@ -56,6 +56,6 @@ class ElevenLabsTTS(TextToSpeech):
 
 # # Usage:
 # # To use the ElevenLabsTTS class, create an instance with your API key:
-# tts = ElevenLabsTTS(api_key=os.environ.get('ELEVENLABS_API_KEY'))
+# tts = ElevenLabsTTS(key=os.environ.get('ELEVENLABS_API_KEY'))
 # # Then, call the generate_audio method to generate audio from text:
 # tts.generate_audio(text='Hello, world!')
