@@ -1,16 +1,4 @@
-import os
-import sys
-
-# Set the path for the module
-MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(MODULE_DIR)
-
-try:
-    from apis.image.automatic1111_image import automaticImage
-except ImportError:
-    # Handle the case where the module cannot be imported
-    automaticImage = None
-    # Log an error or raise an exception, as appropriate
+from apis.image.automatic1111_image import automaticImage
 
 
 class ImageGenerator:
@@ -32,9 +20,9 @@ class ImageGenerator:
         self.image_generator.generate_image_from_text(prompt, **kwargs)
 
 
-# # Usage:
-# # To use the ImageGenerator class, create an instance:
-# imggen1 = ImageGenerator('automatic1111')
-# # Then, call the generate_image_from_text function with a query:
-# query = "An old monk"
-# responses = imggen1.generate_image_from_text(prompt=query)
+# Usage:
+# To use the ImageGenerator class, create an instance:
+imggen1 = ImageGenerator('automatic1111')
+# Then, call the generate_image_from_text function with a query:
+query = "An old monk"
+responses = imggen1.generate_image_from_text(prompt=query)

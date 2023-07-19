@@ -1,20 +1,7 @@
-import os
-import sys
 
-# Set the path for the module
-MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(MODULE_DIR)
-
-try:
-    from apis.tts.coqui_tts import CoquiTTS
-    from apis.tts.elevenlabs_tts import ElevenLabsTTS
-    from apis.tts.fpt_tts import FptTTS
-except ImportError:
-    # Handle the case where the module cannot be imported
-    CoquiTTS = None
-    ElevenLabsTTS = None
-    FptTTS = None
-    # Log an error or raise an exception, as appropriate
+from apis.tts.coqui_tts import CoquiTTS
+from apis.tts.elevenlabs_tts import ElevenLabsTTS
+from apis.tts.fpt_tts import FptTTS
 
 
 class TTSGenerator:
@@ -44,6 +31,7 @@ class TTSGenerator:
 
 
 # # Usage:
+# import os
 # # To use the TTSGenerator class, create an instance with your API key:
 # tts1 = TTSGenerator('coqui', key=os.environ.get('COQUI_BEARER_TOKEN'))
 # tts2 = TTSGenerator('elevenlabs', key=os.environ.get('ELEVENLABS_API_KEY'))

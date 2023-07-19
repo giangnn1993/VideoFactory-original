@@ -1,19 +1,5 @@
-import os
-import sys
-
+from apis.llm.gpt4free_llm import gpt4freeLLM
 from langchain import PromptTemplate, FewShotPromptTemplate
-
-# Set the path for the module
-MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(MODULE_DIR)
-
-
-try:
-    from apis.llm.gpt4free_llm import gpt4freeLLM
-except ImportError:
-    # Handle the case where the module cannot be imported
-    gpt4freeLLM = None
-    # Log an error or raise an exception, as appropriate
 
 
 class TextGenerator:
@@ -86,7 +72,7 @@ class TextGenerator:
 #     print('Error occurred while generating chat response')
 
 
-# # Usage #2:
+# Usage #2:
 # from _prompts import examples_quote, prefix_quote
 # # To use the TextGenerator class to create an image prompt, create an instance:
 # llm1 = TextGenerator('g4f')
