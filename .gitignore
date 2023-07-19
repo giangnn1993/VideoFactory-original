@@ -1,4 +1,5 @@
 __pycache__/
+.vscode
 temp/
 data/output/processed/*
 data/output/processed_videos/*
