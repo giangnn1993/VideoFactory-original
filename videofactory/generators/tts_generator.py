@@ -1,9 +1,9 @@
 import os
 import sys
 
-# Setting path
-SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(SCRIPT_DIR)
+# Set the path for the module
+MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(MODULE_DIR)
 
 try:
     from apis.tts.coqui_tts import CoquiTTS

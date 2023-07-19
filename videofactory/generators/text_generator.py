@@ -3,9 +3,9 @@ import sys
 
 from langchain import PromptTemplate, FewShotPromptTemplate
 
-# Setting path
-SCRIPT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(SCRIPT_DIR)
+# Set the path for the module
+MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(MODULE_DIR)
 
 
 try:
@@ -87,7 +87,7 @@ class TextGenerator:
 
 
 # # Usage #2:
-# from prompts import examples_quote, prefix_quote
+# from _prompts import examples_quote, prefix_quote
 # # To use the TextGenerator class to create an image prompt, create an instance:
 # llm1 = TextGenerator('g4f')
 # # # Then, call the generate_chat_responses function with a query:
@@ -108,7 +108,7 @@ class TextGenerator:
 
 
 # # Usage #3:
-# from prompts import examples_image, prefix_image
+# from _prompts import examples_image, prefix_image
 # # To use the TextGenerator class to create an image prompt, create an instance:
 # llm1 = TextGenerator('g4f')
 # # # Then, call the generate_chat_responses function with a query:
