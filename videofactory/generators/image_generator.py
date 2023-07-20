@@ -20,9 +20,9 @@ class ImageGenerator:
         self.imggen.generate_image_from_text(prompt, **kwargs)
 
 
-# Usage:
-# To use the ImageGenerator class, create an instance:
-imggen1 = ImageGenerator('automatic1111')
-# Then, call the generate_image_from_text function with a query:
-query = "An old monk"
-responses = imggen1.generate_image_from_text(prompt=query)
+# # Usage:
+# # To use the ImageGenerator class, create an instance:
+# imggen1 = ImageGenerator('automatic1111')
+# # Then, call the generate_image_from_text function with a query:
+# query = "An old monk"
+# responses = imggen1.generate_image_from_text(prompt=query)
