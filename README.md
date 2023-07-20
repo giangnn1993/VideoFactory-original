@@ -13,7 +13,7 @@ Before using the software, please ensure that you have the following requirement
 # Features
 ## 1. Lines mode
 ### Process all the text in a .txt file (lines.txt) and batch generate TTS (text-to-speech) audio and talking head videos from it.
-
+<br>
 <details>
 <summary>Workflow for Lines mode</summary>
 
