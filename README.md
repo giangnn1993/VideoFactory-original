@@ -45,7 +45,7 @@ Example:
 ## 2. Conversation mode
 ### Generate a video like this in just a few seconds, with no manual editing required:
 
-[<img src="https://github-production-user-asset-6210df.s3.amazonaws.com/108891710/253665963-b0f0f437-b21f-465d-bfa3-89398ffb01db.png" width="50%">](https://github.com/meap158/VideoFactory/assets/108891710/b7bd591e-29d6-43c8-8912-8c3fd59a72a2 "Demo: Conversation mode")
+[<img src="https://github-production-user-asset-6210df.s3.amazonaws.com/108891710/254748248-b917f687-4e38-48dd-81d3-b397c773b70b.png" width="50%">](https://github.com/meap158/VideoFactory/assets/108891710/b7bd591e-29d6-43c8-8912-8c3fd59a72a2 "Demo: Conversation mode")
 
 <details>
 <summary>Workflow for Conversation mode</summary>
