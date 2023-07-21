@@ -15,9 +15,9 @@ except ImportError:
 
 
 class DidVideo(VideoGenerator):
-    def __init__(self, key: str) -> None:
+    def __init__(self, key: str = None) -> None:
         super().__init__('d-id')
-        self.key: str = key
+        self.key: str = key or os.environ.get('D-ID_BASIC_TOKEN', None)
 
     @staticmethod
     def download_video(token: str, url: str, output_path: str) -> None:
