@@ -65,8 +65,8 @@ class AutomaticImage(ImageGenerator):
         return output_path
 
 
-# # Usage:
-# # To use the automaticImage class, create an instance:
-# image_generator = automaticImage()
-# # Then, call the generate_image_from_text method to generate image from text:
-# image_generator.generate_image_from_text(prompt='An old monk')
+# Usage:
+# To use the AutomaticImage class, create an instance:
+# image_generator = AutomaticImage()
+# Then, call the generate_image_from_text method to generate image from text:
+# print(image_generator.generate_image_from_text(prompt='An old monk'))

@@ -17,7 +17,7 @@ class ImageGenerator:
         return ImgGenClass()
 
     def generate_image_from_text(self, prompt: str, output_path: str = None, **kwargs) -> str:
-        return self.imggen.generate_image_from_text(prompt, output_path, **kwargs)
+        return self.imggen.generate_image_from_text(prompt=prompt, output_path=output_path, **kwargs)
 
 
 # # Usage:
@@ -25,4 +25,5 @@ class ImageGenerator:
 # imggen1 = ImageGenerator('automatic1111')
 # # Then, call the generate_image_from_text function with a query:
 # query = "An old monk"
-# responses = imggen1.generate_image_from_text(prompt=query)
+# image_path = imggen1.generate_image_from_text(prompt=query, output_path=f'{query}.png')
+# print(image_path)

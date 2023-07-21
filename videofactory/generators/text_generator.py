@@ -1,5 +1,6 @@
 from .apis.llm.gpt4free_llm import gpt4freeLLM
 from langchain import PromptTemplate, FewShotPromptTemplate
+from typing import List
 
 
 class TextGenerator:
@@ -7,7 +8,7 @@ class TextGenerator:
         'g4f': gpt4freeLLM,
     }
 
-    def __init__(self, llm_provider):
+    def __init__(self, llm_provider) -> None:
         self.llm_provider = llm_provider
         self.llm = self._create_llm_instance()
 
@@ -17,11 +18,11 @@ class TextGenerator:
             raise ValueError(f'Unsupported LLM provider: {self.llm_provider}')
         return LLMClass()
 
-    def set_llm_provider(self, llm_provider):
+    def set_llm_provider(self, llm_provider) -> None:
         self.llm_provider = llm_provider
         self.llm = self._create_llm_instance()
 
-    def generate_chat_responses(self, query: str):
+    def generate_chat_responses(self, query: str) -> List:
         return self.llm.generate_chat_responses(query)
 
     def create_few_shot_prompt_template(self, query: str, examples: str, prefix: str) -> str:
