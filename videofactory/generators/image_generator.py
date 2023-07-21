@@ -16,8 +16,8 @@ class ImageGenerator:
             raise ValueError(f'Unsupported image generator: {self.imggen_provider}')
         return ImgGenClass()
 
-    def generate_image_from_text(self, prompt: str, **kwargs):
-        self.imggen.generate_image_from_text(prompt, **kwargs)
+    def generate_image_from_text(self, prompt: str, output_path: str = None, **kwargs):
+        self.imggen.generate_image_from_text(prompt, output_path, **kwargs)
 
 
 # # Usage:
