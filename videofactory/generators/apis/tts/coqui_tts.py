@@ -15,9 +15,9 @@ except ImportError:
 
 class CoquiTTS(TextToSpeech):
 
-    def __init__(self, key: str) -> None:
+    def __init__(self, key: str = None) -> None:
         super().__init__('coqui')
-        self.key: str = key
+        self.key: str = key or os.environ.get('COQUI_BEARER_TOKEN', None)
 
     def generate_audio(
         self,

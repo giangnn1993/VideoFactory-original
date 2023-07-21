@@ -16,9 +16,9 @@ except ImportError:
 
 class FptTTS(TextToSpeech):
 
-    def __init__(self, key: str) -> None:
+    def __init__(self, key: str = None) -> None:
         super().__init__('fpt')
-        self.key: str = key
+        self.key: str = key or os.environ.get('FPT_API_KEY', None)
 
     def generate_audio(
         self,

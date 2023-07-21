@@ -16,9 +16,9 @@ except ImportError:
 class ElevenLabsTTS(TextToSpeech):
     BASE_URL: str = 'https://api.elevenlabs.io/v1/text-to-speech'
 
-    def __init__(self, key: str) -> None:
+    def __init__(self, key: str = None) -> None:
         super().__init__('elevenlabs')
-        self.key: str = key
+        self.key: str = key or os.environ.get('ELEVENLABS_API_KEY', None)
 
     def _get_url(self, voice_id: str) -> str:
         return f'{self.BASE_URL}/{voice_id}?optimize_streaming_latency=0'
