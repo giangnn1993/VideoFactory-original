@@ -1,7 +1,7 @@
 
-from apis.tts.coqui_tts import CoquiTTS
-from apis.tts.elevenlabs_tts import ElevenLabsTTS
-from apis.tts.fpt_tts import FptTTS
+from .apis.tts.coqui_tts import CoquiTTS
+from .apis.tts.elevenlabs_tts import ElevenLabsTTS
+from .apis.tts.fpt_tts import FptTTS
 
 
 class TTSGenerator:
@@ -39,6 +39,6 @@ class TTSGenerator:
 # tts3 = TTSGenerator('fpt', key=os.environ.get('FPT_API_KEY'))
 # # Then, call the generate_audio method to generate audio from text:
 # path = Path(Path.cwd()) / 'examples'
-# tts1.generate_audio(text='Hello, world!', emotion='Angry', output_path=f'{path / "coqui_tts.mp3"}')
-# tts2.generate_audio(text='Hello, world!', stability=0.45, output_path=f'{path / "elevenlabs_tts.mp3"}')
-# tts3.generate_audio(text='Xin chào mọi người', speed=-3.0, output_path=f'{path / "fpt_tts.mp3"}')
+# tts1.generate_audio(text='Hello, world!', emotion='Angry', output_path=f'{path / "coqui_tts.wav"}')
+# tts2.generate_audio(text='Hello, world!', stability=0.45, output_path=f'{path / "elevenlabs_tts.wav"}')
+# tts3.generate_audio(text='Xin chào mọi người', speed=-3.0, output_path=f'{path / "fpt_tts.wav"}')

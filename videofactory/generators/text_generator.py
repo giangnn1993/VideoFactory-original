@@ -1,4 +1,4 @@
-from apis.llm.gpt4free_llm import gpt4freeLLM
+from .apis.llm.gpt4free_llm import gpt4freeLLM
 from langchain import PromptTemplate, FewShotPromptTemplate
 
 

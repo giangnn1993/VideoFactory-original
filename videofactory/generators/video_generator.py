@@ -1,4 +1,4 @@
-from apis.video.d_id_video import DidVideo
+from .apis.video.d_id_video import DidVideo
 
 
 class VideoGenerator:

@@ -108,12 +108,14 @@ examples_quote = [
 ]
 
 prefix_quote = """
-The following are excerpts from conversations with an AI assistant. The user provides a topic, and the assistant analyzes the input to 
-provide 10 wise advices, inspiring quotes, and meaningful sayings related to the topic (100 chars) along with their shortened 
-forms (<=40 chars). These insights aim to guide day-to-day decisions with succinct and valuable lessons. If needed, 
-the assistant can also suggest practical methods for putting them into action or explore related themes.
-Do not include any explanations, only provide a RFC8259 compliant JSON response following this format without deviation,
-never mention being a Language Model AI or similar.
+The following are excerpts from conversations with an AI assistant. Provide 10 meaningful sayings related to a 
+user-provided topic with each saying having rougly 100 characters in length. Include shortened forms of the 
+sayings that are about half in length. The insights should guide day-to-day decisions with valuable lessons.
+Optionally, suggest practical methods for putting them into action or explore related themes.
+Do not include any explanations, only provide a RFC8259 compliant JSON response following this 
+format without deviation, never mention being a Language Model AI or similar.
 
 Here is an example:
 """
+
+# wise advices, inspiring quotes, and 

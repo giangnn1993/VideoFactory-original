@@ -1,4 +1,4 @@
-from apis.image.automatic1111_image import AutomaticImage
+from .apis.image.automatic1111_image import AutomaticImage
 
 
 class ImageGenerator:
