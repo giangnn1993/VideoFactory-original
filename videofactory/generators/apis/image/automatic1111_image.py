@@ -27,7 +27,7 @@ class AutomaticImage(ImageGenerator):
             sd_model_checkpoint: str = None,
             CLIP_stop_at_last_layers: int = 1,
             output_path: str = 'automatic1111_image.png',
-            ) -> None:
+            ) -> str:
 
         if negative_prompt is None:
             negative_prompt = "people in the background, nipple, wearing facemask, sketches, (worst quality:2), (low quality:2), (normal quality:2), lowres, normal quality, ((monochrome)), ((grayscale)), skin spots, acnes, skin blemishes, bad anatomy,(long hair:1.4),DeepNegative,(fat:1.2),facing away, looking away,tilted head, lowres,bad anatomy,bad hands, text, error, missing fingers,extra digit, fewer digits, cropped, worstquality, low quality, normal quality,jpegartifacts,signature, watermark, username,blurry,bad feet,cropped,poorly drawn hands,poorly drawn face,mutation,deformed,worst quality,low quality,normal quality,jpeg artifacts,signature,watermark,extra fingers,fewer digits,extra limbs,extra arms,extra legs,malformed limbs,fused fingers,too many fingers,long neck,cross-eyed,mutated hands,polar lowres,bad body,bad proportions,gross proportions,text,error,missing fingers,missing arms,missing legs,extra digit, extra arms, extra leg, extra foot,bhands-neg, ([bad-hands-5:0.6]:1.331), bhands:0.5"  # noqa
@@ -61,6 +61,8 @@ class AutomaticImage(ImageGenerator):
         pnginfo = PngImagePlugin.PngInfo()
         pnginfo.add_text("parameters", json.dumps(result1.info))
         result1.image.save(output_path, pnginfo=pnginfo)
+
+        return output_path
 
 
 # # Usage:
