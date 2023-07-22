@@ -43,24 +43,6 @@ def process_text(text):
     return first_part, outside_text, config
 
 
-def create_images_and_audios_list(basenames, images_dir, audios_dir):
-    # Initialize an empty list to store the dictionaries
-    result_list = []
-
-    # Iterate through the wav_basenames list
-    for basename in basenames:
-        # Create a dictionary for each basename
-        data_dict = {
-            'image': os.path.join(images_dir, basename + '.png'),
-            'audio': os.path.join(audios_dir, basename + '.wav')
-        }
-
-        # Append the dictionary to the result_list
-        result_list.append(data_dict)
-
-    return result_list
-
-
 def create_images_and_audios_dict(basenames, images_dir, audios_dir):
     # Initialize an empty dictionary to store the data
     result_dict = {}
