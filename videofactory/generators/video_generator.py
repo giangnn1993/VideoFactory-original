@@ -1,3 +1,8 @@
+import json
+from collections import defaultdict
+from typing import Dict
+from pathlib import Path
+
 from .apis.video.d_id_video import DidVideo
 
 
@@ -6,7 +11,7 @@ class VideoGenerator:
         'd-id': DidVideo
     }
 
-    def __init__(self, vidgen_provider, key: str):
+    def __init__(self, vidgen_provider, key: str = None):
         self.vidgen_provider = vidgen_provider
         self.key = key
         self.vidgen = self._create_vidgen_instance()
@@ -38,6 +43,66 @@ class VideoGenerator:
 
     def get_animation(self, id: str, **kwargs):
         self.vidgen.get_animation(id=id, **kwargs)
+
+    def create_talk_videos_from_images_and_audios(self,
+                                                  images_and_audios_dict: Dict,
+                                                  output_dir: str, **kwargs) -> Path:
+        output_ids_file = Path(output_dir) / 'd-id_output_ids.json'
+
+        for basename, data_dict in images_and_audios_dict.items():
+            image_path = data_dict["image"]
+            audio_path = data_dict["audio"]
+
+            id = self.create_talk_video(image=image_path, audio=audio_path, **kwargs)
+
+            if not output_ids_file.exists():
+                # Create d-id_output_ids.json with empty dictionary content if it does not exist
+                with open(output_ids_file, 'w') as outfile:
+                    json.dump({}, outfile)
+
+            # Read the existing json data from d-id_output_ids.json
+            with open(output_ids_file, 'r') as infile:
+                json_object = json.load(infile)
+
+            # Use a defaultdict to initialize missing sub-dictionaries
+            json_object = defaultdict(dict, json_object)
+
+            # Add new key-value pair to the dictionary
+            print(f"D-ID: {id}")
+            json_object[self.key][basename] = id
+
+            # Write the updated dictionary to d-id_output_ids.json in the output_dir
+            with open(output_ids_file, 'w') as outfile:
+                json.dump(json_object, outfile)
+
+        # Return the path of the d-id_output_ids.json file
+        return output_ids_file
+
+    def get_talks_from_json(self, output_ids_file: Path, output_dir: str) -> None:
+        # Save the current key value to be restored later
+        current_key = self.key
+        # Open the JSON file
+        with open(output_ids_file, 'r') as infile:
+            json_data = json.load(infile)
+
+        # Loop through the JSON data by keys
+        for key, data_dict in json_data.items():
+            # Loop through the dicts
+            for key_in_dict, id_value in data_dict.items():
+                # Temporarily set the class attribute self.key to the current key
+                # This ensures that the subsequent call to self.vidgen.get_talk()
+                # uses the correct self.key value
+                self.key = key
+
+                # Get the 'id' and 'output_path' for self.vidgen.get_talk()
+                id = id_value
+                output_path = Path(output_dir) / (key_in_dict + '_d_id.mp4')
+
+                # Call the function self.vidgen.get_talk() with the 'id' and 'output_path'
+                self.vidgen.get_talk(id, output_path)
+
+        # Restore the original key value after processing all the data
+        self.key = current_key
 
 
 # USAGE
