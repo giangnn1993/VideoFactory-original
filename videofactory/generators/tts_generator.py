@@ -6,7 +6,7 @@ from pathlib import Path
 from .apis.tts.coqui_tts import CoquiTTS
 from .apis.tts.elevenlabs_tts import ElevenLabsTTS
 from .apis.tts.fpt_tts import FptTTS
-from utils import process_text
+from _utils import process_text
 
 
 class TTSGenerator:
@@ -39,48 +39,63 @@ class TTSGenerator:
         self.tts.generate_audio(text, **kwargs)
 
     def generate_audios_from_txt(self, input_file: str, output_dir: str = None, **kwargs) -> None:
+        input_path = Path(input_file)
+
         # Prepare output directory path
         if output_dir is None:
             # Use the parent directory of input_file as the output directory
-            output_dir = Path(input_file).parent / Path(input_file).stem
+            output_dir = input_path.parent / input_path.stem
         else:
             # Use the provided output_dir and append the stem of input_file
-            output_dir = Path(output_dir) / Path(input_file).stem
-        if not output_dir.exists():
-            # Create the output directory and its parent directories if they don't exist
-            output_dir.mkdir(parents=True, exist_ok=True)
+            output_dir = Path(output_dir) / input_path.stem
+        # Create the output directory and its parent directories if they don't exist
+        output_dir.mkdir(parents=True, exist_ok=True)
 
         with open(input_file, 'r', encoding='utf-8') as file:
             for i, line in enumerate(file, start=1):
                 # Find the content inside square brackets using regex
                 match = re.search(r'\[(.*?)\]', line)
                 if match:
-                    first_item, outside_text, config = process_text(line)
-                    # Update the kwargs directly with the config dictionary
-                    kwargs.update(config)
+                    _, outside_text, config = process_text(line)
+                    # Check if the 'config' variable is not empty (evaluates to True).
+                    if bool(config):
+                        # Update the kwargs directly with the config dictionary
+                        kwargs.update(config)
 
-                    # Check if the line contains the 'provider' pattern
-                    if 'provider' in kwargs:
-                        tts_provider = kwargs['provider']
-                        self.set_tts_provider(tts_provider)
+                        # Check if the line contains the 'provider' pattern
+                        if 'provider' in kwargs:
+                            tts_provider = kwargs['provider']
+                            self.set_tts_provider(tts_provider)
 
-                    # Remove the 'provider' key from kwargs as it's no longer needed
-                    kwargs.pop('provider', None)
+                        # Remove the 'provider' key from kwargs as it's no longer needed
+                        kwargs.pop('provider', None)
 
-                    # Filter out unsupported arguments for the generate_audio method
-                    supported_args = set(inspect.signature(self.tts.generate_audio).parameters.keys())
-                    kwargs_for_generate_audio = {k: v for k, v in kwargs.items() if k in supported_args}
+                        # Filter out unsupported arguments for the generate_audio method
+                        supported_args = set(inspect.signature(self.tts.generate_audio).parameters.keys())
+                        kwargs_for_generate_audio = {k: v for k, v in kwargs.items() if k in supported_args}
 
-                    # Prepare output path for the generated audio file
-                    filename = f'{i}.wav'
-                    output_path = Path(output_dir) / filename
+                        # Prepare output path for the generated audio file
+                        filename = f'{i}.wav'
+                        output_path = Path(output_dir) / filename
 
-                    # Generate audio for the current line using the current TTS provider and filtered kwargs
-                    self.generate_audio(
-                        outside_text,
-                        output_path=output_path,
-                        **kwargs_for_generate_audio
-                        )
+                        # Generate audio for the current line using the current TTS provider and filtered kwargs
+                        self.generate_audio(
+                            outside_text,
+                            output_path=output_path,
+                            **kwargs_for_generate_audio
+                            )
+                    # If the 'config' variable is empty (evaluates to False).
+                    else:
+                        # Prepare output path for the generated audio file
+                        filename = f'{i}.wav'
+                        output_path = Path(output_dir).parent / filename
+
+                        self.generate_audio(
+                            outside_text,
+                            output_path=output_path,
+                            **kwargs
+                            )
+
 
 # USAGE
 # ------------------------------------
