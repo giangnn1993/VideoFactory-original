@@ -8,7 +8,7 @@ import json
 conversation_image_1 = {
     "subject": "An old monk",
     "prompt": {
-        "media": """masterpiece, top quality, best quality, official art, beautiful and aesthetic:1.2, extremely detailed, high quality, highres, 16K, RAW, ultra highres, ultra detailed, finely detailed, an extremely delicate and beautiful, extremely detailed real shadow""",
+        "media": "masterpiece, top quality, best quality, official art, beautiful and aesthetic:1.2, extremely detailed, high quality, highres, 16K, RAW, ultra highres, ultra detailed, finely detailed, an extremely delicate and beautiful, extremely detailed real shadow",
         "subject": "(an old monk:1.3)",
         "describe": "headshot, ((bald)), afghan, beard, wearing a brown outfit and a brown robe, (skin color: alabaster)",
         "art": "realistic face, a photorealistic painting, photorealism"
