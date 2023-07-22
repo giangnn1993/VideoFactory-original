@@ -10,7 +10,7 @@ def process_text(text):
     # Splitting the bracket text by "|"
     items = bracket_text.split("|")
 
-    first_item = items[0].strip()
+    first_part = items[0].strip()
 
     # Setting the rest of the items as environmental variables
     for item in items[1:]:
@@ -19,4 +19,4 @@ def process_text(text):
 
     outside_text = (text[:start_index-1] + text[end_index+1:]).strip()
 
-    return first_item, outside_text, config
+    return first_part, outside_text, config
