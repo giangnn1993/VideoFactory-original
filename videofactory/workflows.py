@@ -199,7 +199,7 @@ class WorkflowManager:
             self.video_editor.add_watermark_text()
         # endregion
 
-        # region Step 5: Add thumbnails
+        # region Step 5: ADD THUMBNAILS
         thumbnail_lines = read_lines(thumbnail_lines_file)
         for thumbnail_line in thumbnail_lines:
             first_part, outside_text, _ = process_text(thumbnail_line)
