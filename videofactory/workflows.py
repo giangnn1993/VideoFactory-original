@@ -6,10 +6,19 @@ from generators.image_generator import ImageGenerator
 from generators.tts_generator import TTSGenerator
 from generators.video_generator import VideoGenerator
 from generators.subtitle_generator import SubtitleGenerator
+from generators.thumbnail_generator import ThumbnailGenerator
 
-from _utils import read_lines, compare_lines_lists, process_text, get_basenames, create_images_and_audios_dict
+from _utils import (
+    read_lines,
+    compare_lines_lists,
+    process_text,
+    get_basenames,
+    create_images_and_audios_dict,
+    create_script_folders
+)
 
 from editors.video_editor import VideoEditor
+from editors.audio_editor import AudioEditor
 
 
 class WorkflowManager:
@@ -19,8 +28,10 @@ class WorkflowManager:
         self.tts_generator = TTSGenerator()  # Initialize TTSGenerator object
         self.video_generator = VideoGenerator('d-id')  # Initialize VideoGenerator object
         self.subtitle_generator = SubtitleGenerator()  # Initialize SubtitleGenerator object
+        self.thumbnail_generator = ThumbnailGenerator()  # Initialize ThumbnailGenerator object
 
         self.video_editor = VideoEditor(width=540, height=960)  # Initialize VideoEditor object
+        self.audio_editor = AudioEditor()  # Initialize AudioEditor object
 
     def check_talking_head_videos_resources(self, lines_file, thumbnail_lines_file, images_dir):
         try:
@@ -72,20 +83,33 @@ class WorkflowManager:
 
             # region Step 1: GENERATE AUDIOS
             # ------------------------------------
-            # Set the TTS provider to be used based on the environment variable 'TTS_PROVIDER'
-            # The TTS provider will determine which Text-to-Speech engine or service to use.
-            self.tts_generator.set_tts_provider(os.environ.get('TTS_PROVIDER'))
+            # Create script folders to store lines of text from 'lines_file' as separate files
+            script_folders = create_script_folders(txt_file=lines_file, split_lines=True)
 
-            # Generate audio files from the text in 'lines_file' using TTS generator
-            # The output audio files will be saved in the 'output_dir' directory.
-            self.tts_generator.generate_audios_from_txt(input_file=lines_file,
-                                                        output_dir=output_dir)
+            for script_folder in script_folders:
+                audio_files = []
+
+                # Set the TTS provider to be used based on the environment variable 'TTS_PROVIDER'
+                # The TTS provider will determine which Text-to-Speech engine or service to use.
+                self.tts_generator.set_tts_provider(os.environ.get('TTS_PROVIDER'))
+
+                # Generate audio files from the text in 'lines_file' using TTS generator
+                # The output audio files will be saved in the 'script_folder' directory.
+                script_file = script_folder / 'script.txt'
+                if (script_file.exists):
+                    audio_files = self.tts_generator.generate_audios_from_txt(
+                                                                input_file=script_file,
+                                                                output_dir=script_folder)
+
+                    # Merge the generated audio files with padding to create a single audio file
+                    # The merged audio file will be saved in the 'output_dir'.
+                    self.audio_editor.input_audio_files = audio_files
+                    self.audio_editor.merge_audios_with_padding(output_dir=output_dir,
+                                                                name=script_folder.name)
             # endregion
 
             # region Step 2: GENERATE D-ID VIDEOS
             # ------------------------------------
-            self.video_generator.key = os.environ.get('D-ID_BASIC_TOKEN')
-
             # Get the basenames of files in the output_dir with the specified file_extension
             png_basenames = get_basenames(images_dir, '.png')
             wav_basenames = get_basenames(output_dir, '.wav')
@@ -101,13 +125,21 @@ class WorkflowManager:
             images_and_audios_dict = create_images_and_audios_dict(
                 basenames=wav_basenames,
                 images_dir=images_dir,
-                d_id_videos_dir=output_dir)
+                audios_dir=output_dir)
+
+            # Set the key for the video generator by rotating through a list of keys.
+            # The video generator will use the provided key for generating videos.
+            self.video_generator.rotate_key(  # List of available keys
+                                            keys=os.environ.get('D-ID_BASIC_TOKENS'))
 
             output_ids_file = self.video_generator.create_talk_videos_from_images_and_audios(
                 images_and_audios_dict=images_and_audios_dict,
                 output_dir=output_dir)
 
-            # output_ids_file = Path(output_dir) / 'd-id_output_ids.json' # For debugging purposes
+            # # This line is only for debugging purposes.
+            # output_ids_file = Path(output_dir) / 'd-id_output_ids.json'
+
+            # Download generated videos
             self.video_generator.get_talks_from_json(output_ids_file=output_ids_file, output_dir=output_dir)
             # endregion
 
@@ -145,7 +177,10 @@ class WorkflowManager:
             # Modify subtitle with styles
             modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
             # Burn subtitle
-            subtitled_file = self.subtitle_generator.burn_subtitle(
+            # subtitled_file = self.subtitle_generator.burn_subtitle(
+            #                 input_video=no_watermark_mp4_file,
+            #                 subtitle_file=modified_subtitle_file)
+            self.subtitle_generator.burn_subtitle(
                             input_video=no_watermark_mp4_file,
                             subtitle_file=modified_subtitle_file)
         # endregion
@@ -160,9 +195,15 @@ class WorkflowManager:
 
             # Add watermark text
             self.video_editor.input_video = mp4_output_filepath
-            mp4_output_wm_filepath = self.video_editor.add_watermark_text()
+            # mp4_output_wm_filepath = self.video_editor.add_watermark_text()
+            self.video_editor.add_watermark_text()
+        # endregion
 
-            # Add thumbnail
+        # region Step 5: Add thumbnails
+        # no_watermark_mp4_files = list(videos_dir.glob('*_no_watermark.mp4'))
+        # for no_watermark_mp4_file in no_watermark_mp4_files:
+        #     first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_mp4_file)
+        #     self.thumbnail_generator.generate_thumbnail_image(input_filename=first_frame, text='Hello World')
 
         # endregion
 
