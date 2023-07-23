@@ -2,6 +2,7 @@ import os
 import sys
 import requests
 import json
+import time
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -37,8 +38,27 @@ class DidVideo(VideoGenerator):
                     print(f'Downloaded successfully: {output_path}')
             else:
                 print("Status is not 'done'")
+                raise requests.RequestException("Status is not 'done'")
         else:
             print('Request failed.')
+            response.raise_for_status()  # Raises an exception for non-200 status codes
+
+    def download_video_with_retry(self, url: str, output_path: str,
+                                  max_retries=3, retry_delay=5) -> None:
+        for attempt in range(1, max_retries + 1):
+            try:
+                self.download_video(self.key, url, output_path)
+                return
+            except requests.RequestException as e:
+                print(f"Download failed (Attempt {attempt} of {max_retries}) - Error: {e}")
+
+            # Retry after a delay
+            if attempt < max_retries:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+
+        # If all retries failed, raise an exception
+        raise Exception(f"Failed to download video from {url} after {max_retries} attempts.")
 
     def create_talk(
             self,
@@ -100,7 +120,8 @@ class DidVideo(VideoGenerator):
     def get_talk(self, id: str, output_path: str = 'd_id_talk.mp4') -> None:
         url = f"https://api.d-id.com/talks/{id}"
         print('Talk Video URL:', url)
-        self.download_video(self.key, url, output_path)
+        # self.download_video(self.key, url, output_path)
+        self.download_video_with_retry(url=url, output_path=output_path)
 
     def upload_image(self, image) -> str:
         try:
