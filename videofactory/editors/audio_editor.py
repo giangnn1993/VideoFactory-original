@@ -18,12 +18,12 @@ class AudioEditor:
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"Command failed: {e}")
 
-    def merge_audios_with_padding(self, audios_dir: Path, name: str = None,
+    def merge_audios_with_padding(self, output_dir: Path, name: str = None,
                                   begin_end_delay: int = 500, between_delay: int = 1000):
         # If the 'name' argument is not provided, set it to None
-        name = name or audios_dir.name
-        # Create the base path by combining the 'audios_dir' and the 'name'
-        basepath = audios_dir / name
+        name = name or output_dir.name
+        # Create the base path by combining the 'output_dir' and the 'name'
+        basepath = output_dir / name
 
         # Create the filter complex argument
         filter_complex_args = []
