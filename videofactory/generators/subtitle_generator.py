@@ -59,7 +59,7 @@ class SubtitleGenerator:
                 'uppercase': str.upper,
                 'lowercase': str.lower,
                 'titlecase': lambda x: re.sub(r"[A-Za-z]+('[A-Za-z]+)?",
-                                             lambda mo: mo.group(0)[0].upper() + mo.group(0)[1:].lower(), x),
+                                              lambda mo: mo.group(0)[0].upper() + mo.group(0)[1:].lower(), x),
             }
 
             # Convert non-tag groups based on the specified case
@@ -93,11 +93,12 @@ class SubtitleGenerator:
             # Save the modified subtitle file
             subs.save(videos_dir / subtitle_file)
         else:
-            print("Invalid option")
+            print("Subtitle modified without prepend string.")
 
     def get_video_dimensions(self, input_file):
         # Get the size of the video using ffprobe
-        ffprobe_cmd = f'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=s=x:p=0 "{input_file}"'
+        ffprobe_cmd = (f'ffprobe -v error -select_streams v:0 -show_entries stream=width,'
+                       f'height -of csv=s=x:p=0 "{input_file}"')
         video_size = subprocess.check_output(ffprobe_cmd, shell=True).decode().strip().split("x")
         play_res_x = video_size[0]
         play_res_y = video_size[1]
@@ -145,7 +146,7 @@ class SubtitleGenerator:
                 if style.endswith('_ko'):
                     # Read the .ass file and replace all instances of "{\\k" with "{\\ko":
                     with open(subtitle_filepath, 'r', encoding='utf-8') as file:
-                        text = file.read().replace("{\k", "{\ko")
+                        text = file.read().replace(r"{\k", r"{\ko")
                     with open(subtitle_filepath, 'w', encoding='utf-8') as file:
                         file.write(text)
 
@@ -157,16 +158,20 @@ class SubtitleGenerator:
                 play_res_x, play_res_y = self.get_video_dimensions(input_filepath)
 
                 # Burn subtitle into the video file
-                normalized_input_filepath = input_filepath.replace("\\", "/")  # Use forward slash instead of backslash
-                normalized_subtitle_filepath = subtitle_filepath.replace("\\", "/").replace(":", "\\\\:")  # Use forward slash instead of backslash and additional escaping for colon
-                normalized_output_filepath = output_filepath.replace("\\", "/")  # Use forward slash instead of backslash
+                # Use forward slash instead of backslash and additional escaping for colon
+                normalized_input_filepath = input_filepath.replace("\\", "/")
+                normalized_subtitle_filepath = subtitle_filepath.replace("\\", "/").replace(":", "\\\\:")
+                normalized_output_filepath = output_filepath.replace("\\", "/")
+
                 ffmpeg_cmd = (
                     f'ffmpeg -i "{normalized_input_filepath}" -vf "subtitles={normalized_subtitle_filepath}:'
-                    f'force_style=\'PlayResX={play_res_x},PlayResY={play_res_y}\'" -c:a copy "{normalized_output_filepath}" -y'
+                    f'force_style=\'PlayResX={play_res_x},PlayResY={play_res_y}\'" -c:a copy '
+                    f'"{normalized_output_filepath}" -y'
                 )
-                print(ffmpeg_cmd)
+                # print(ffmpeg_cmd)
                 # Execute the ffmpeg command
-                subprocess.call(ffmpeg_cmd, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.call(ffmpeg_cmd, shell=True, check=True,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     def generate_subtitle(self, input_video):
         input_video_path = Path(input_video)
@@ -210,7 +215,7 @@ class SubtitleGenerator:
             # Check if the variable 'style' ends with '_ko':
             if self.style.endswith('_ko'):
                 # Read the .ass file and replace all instances of "{\\k" with "{\\ko":
-                text = text.replace("{\k", "{\ko")
+                text = text.replace(r"{\k", r"{\ko")
 
             modified_subtitle_file = Path(subtitle_file).with_name(f"{Path(subtitle_file).stem}_modified.ass")
             with open(modified_subtitle_file, 'w', encoding='utf-8') as file:
@@ -231,9 +236,11 @@ class SubtitleGenerator:
         output_file = f'{input_video.stem}_subtitled.mp4'
         output_filepath = input_video.parent / output_file
         # Burn subtitle into the video file
-        normalized_input_filepath = str(input_video).replace("\\", "/")  # Use forward slash instead of backslash
-        normalized_subtitle_filepath = str(subtitle_file).replace("\\", "/").replace(":", "\\\\:")  # Use forward slash instead of backslash and additional escaping for colon
-        normalized_output_filepath = str(output_filepath).replace("\\", "/")  # Use forward slash instead of backslash
+        # Use forward slash instead of backslash and additional escaping for colon
+        normalized_input_filepath = str(input_video).replace("\\", "/")
+        normalized_subtitle_filepath = str(subtitle_file).replace("\\", "/").replace(":", "\\\\:")
+        normalized_output_filepath = str(output_filepath).replace("\\", "/")
+
         ffmpeg_cmd = (
             f'ffmpeg -i "{normalized_input_filepath}" -vf "subtitles={normalized_subtitle_filepath}:'
             f'force_style=\'PlayResX={play_res_x},PlayResY={play_res_y}\'" -c:a copy "{normalized_output_filepath}" -y'
