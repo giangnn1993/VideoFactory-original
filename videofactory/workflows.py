@@ -220,7 +220,9 @@ class WorkflowManager:
 lines_file = r"lines.txt"
 thumbnail_lines_file = r"thumbnail_lines.txt"
 images_dir = r"images"
+
 workflow_manager = WorkflowManager()  # Create an instance of WorkflowManager
+
 workflow_manager.generate_talking_head_videos(lines_file, thumbnail_lines_file, images_dir)
 output_dir = Path(lines_file).parent / Path(lines_file).stem
 workflow_manager.edit_talking_head_videos(thumbnail_lines_file=thumbnail_lines_file,
