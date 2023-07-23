@@ -69,7 +69,7 @@ class VideoGenerator:
 
             # Add new key-value pair to the dictionary
             print(f"D-ID: {id}")
-            json_object[self.key][basename] = id
+            json_object[self.vidgen.key][basename] = id
 
             # Write the updated dictionary to d-id_output_ids.json in the output_dir
             with open(output_ids_file, 'w') as outfile:
@@ -80,7 +80,7 @@ class VideoGenerator:
 
     def get_talks_from_json(self, output_ids_file: Path, output_dir: str) -> None:
         # Save the current key value to be restored later
-        current_key = self.key
+        current_key = self.vidgen.key
         # Open the JSON file
         with open(output_ids_file, 'r') as infile:
             json_data = json.load(infile)
@@ -89,21 +89,49 @@ class VideoGenerator:
         for key, data_dict in json_data.items():
             # Loop through the dicts
             for key_in_dict, id_value in data_dict.items():
-                # Temporarily set the class attribute self.key to the current key
-                # This ensures that the subsequent call to self.vidgen.get_talk()
-                # uses the correct self.key value
-                self.key = key
+                if key_in_dict is not None and id_value is not None:
+                    # Temporarily set the class attribute self.vidgen.key to the current key
+                    # This ensures that the subsequent call to self.vidgen.get_talk()
+                    # uses the correct self.vidgen.key value
+                    self.vidgen.key = key
 
-                # Get the 'id' and 'output_path' for self.vidgen.get_talk()
-                id = id_value
-                output_path = Path(output_dir) / (key_in_dict + '_d_id.mp4')
+                    # Get the 'id' and 'output_path' for self.vidgen.get_talk()
+                    id = id_value
+                    output_path = Path(output_dir) / (key_in_dict + '_d_id.mp4')
 
-                # Call the function self.vidgen.get_talk() with the 'id' and 'output_path'
-                self.vidgen.get_talk(id, output_path)
+                    # Call the function self.vidgen.get_talk() with the 'id' and 'output_path'
+                    self.vidgen.get_talk(id, output_path)
 
         # Restore the original key value after processing all the data
-        self.key = current_key
+        self.vidgen.key = current_key
 
+    def rotate_key(self, keys: str,
+                   limit: int = 2,  delimiter: str = ',') -> None:
+        # Split the keys string into a list using the specified delimiter
+        keys = keys.split(delimiter)
+
+        # If the provided key is in the list of keys, set the current_index to its index
+        # Otherwise, set the current_index to 0 (the first key in the list)
+        current_index = keys.index(self.vidgen.key) if self.vidgen.key in keys else 0
+
+        self.vidgen.key = keys[current_index]
+
+        # Get the remaining credits for the current key using the get_credits() method
+        remaining_credits = self.vidgen.get_credits()
+
+        # This while loop runs as long as variable "remaining" satisfies the limit condition
+        while remaining_credits < limit:
+            # Find the index of the current key
+            current_index = keys.index(self.vidgen.key)
+            # Check if not already at last key
+            if current_index < len(keys) - 1:
+                self.vidgen.key = keys[current_index + 1]
+            remaining_credits = self.vidgen.get_credits()
+            print('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')
+            print(f"Current token: {self.vidgen.key}")
+            print(f"Current token index: {current_index}/{len(keys)}")
+            print(f"REMAINING CREDITS: {remaining_credits}")
+            print('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛')
 
 # USAGE
 # ------------------------------------
