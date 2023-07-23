@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
+from typing import List
 
 
 def read_lines(file_path):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding='utf8') as file:
         lines_list = file.readlines()
     return lines_list
 
@@ -59,3 +61,57 @@ def create_images_and_audios_dict(basenames, images_dir, audios_dir):
         result_dict[basename] = data_dict
 
     return result_dict
+
+
+def create_script_folders(txt_file: str, split_lines=False, delimiter: str = '.') -> List[Path]:
+    # Convert the input txt_file_path to a Path object
+    txt_file = Path(txt_file)
+
+    # Read the contents of the txt file
+    with txt_file.open('r', encoding='utf8') as file:
+        lines = file.readlines()
+
+    # Find the maximum line number for zfill
+    max_line_number = len(str(len(lines)))
+
+    # List to store folder paths
+    folder_paths = []
+
+    # Process each line and create folders and files
+    for i, line in enumerate(lines, start=1):
+        line = line.strip()
+
+        # Extract text inside and outside square brackets
+        start_index = line.find("[") + 1
+        end_index = line.find("]")
+        text_inside_brackets = line[start_index:end_index]
+        text_outside_brackets = (line[:start_index-1] + line[end_index+1:]).strip()
+
+        # Create a folder for each line
+        folder_name = f"{str(i).zfill(max_line_number)}"
+        folder_path = txt_file.parent / txt_file.stem / folder_name
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Append folder_path to the list
+        folder_paths.append(folder_path)
+
+        # Create the 'script.txt' file inside each folder
+        script_file_path = folder_path / "script.txt"
+        with script_file_path.open('w', encoding='utf8') as script_file:
+            if split_lines:
+                # Split text_outside_brackets by the delimiter and write to 'script.txt'
+                count_non_empty_items = len([item for item in text_outside_brackets.split(delimiter) if item])
+                for index, item in enumerate(text_outside_brackets.split(delimiter)):
+                    # Only write to 'script.txt' if the item is not empty
+                    if item:
+                        # Write the item wrapped in square brackets and stripped
+                        script_file.write(f'[{text_inside_brackets}]{item.strip()}')
+                        # Add a new line character '\n' after each item, except for the last item
+                        if index < count_non_empty_items - 1:
+                            script_file.write('\n')
+            else:
+                # Write the entire line to 'script.txt'
+                script_file.write(line)
+
+    # Return the list of folder paths
+    return folder_paths
