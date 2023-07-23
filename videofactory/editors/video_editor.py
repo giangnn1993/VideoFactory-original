@@ -58,7 +58,7 @@ class VideoEditor:
         # Use Path concatenation for audio_dir, and processed_dir
         audio_dir = Path(project_folder / config.get('paths', 'audio_dir'))
         processed_dir = Path(project_folder / config.get('paths', 'processed_dir'))
-        print(processed_dir)
+        # print(processed_dir)
 
         if videos_dir is None:
             videos_dir = processed_dir
@@ -111,7 +111,7 @@ class VideoEditor:
 
         # print(f"The closest match is {closest_match}")
         # print(closest_match)
-        print(f"{mp4_file} ({mp4_duration}s) - {closest_match}")
+        # print(f"{mp4_file} ({mp4_duration}s) - {closest_match}")
         return closest_match
 
     def remove_d_id_watermark(self, input_image, output_video=None):
@@ -192,10 +192,10 @@ class VideoEditor:
             f'ffmpeg -i "{mp4_shortest_temp_filepath}" -c:v libx264 -crf 18 -preset slow -profile:v high -level:v 4.1 '
             f'-pix_fmt yuv420p -colorspace bt709 -color_trc bt709 -color_primaries bt709 -c:a copy "{mp4_output_filepath}" -y'
         )
-        print("#######################################################################################################")
-        print('cmd_merge_audio_files_with_fading_effects')
-        print(cmd_merge_audio_files_with_fading_effects)
-        print("#######################################################################################################")
+        # print("#######################################################################################################")
+        # print('cmd_merge_audio_files_with_fading_effects')
+        # print(cmd_merge_audio_files_with_fading_effects)
+        # print("#######################################################################################################")
         self.run_command(cmd_merge_audio_files_with_fading_effects)
 
         # Remove temporary files
@@ -221,10 +221,10 @@ class VideoEditor:
             f'fontsize=18: x=(w-text_w)/2: y=(h-text_h)*0.78" -codec:a copy \"{mp4_output_wm_filepath}\" -y && '
             f'rmdir /q \"{self.temp_dir}\"'
         )
-        print("#######################################################################################################")
-        print('cmd_add_watermark_text')
-        print(cmd_add_watermark_text)
-        print("#######################################################################################################")
+        # print("#######################################################################################################")
+        # print('cmd_add_watermark_text')
+        # print(cmd_add_watermark_text)
+        # print("#######################################################################################################")
         self.run_command(cmd_add_watermark_text)
 
         return mp4_output_wm_filepath
