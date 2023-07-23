@@ -145,7 +145,7 @@ class WorkflowManager:
 
             return output_dir
 
-    def edit_talking_head_videos(self, images_dir, videos_dir):
+    def edit_talking_head_videos(self, thumbnail_lines_file, images_dir, videos_dir):
         # region Step 1: VALIDATE RESOURCES
         # ------------------------------------
         basenames = get_basenames(videos_dir, '_d_id.mp4')
@@ -200,19 +200,28 @@ class WorkflowManager:
         # endregion
 
         # region Step 5: Add thumbnails
-        # no_watermark_mp4_files = list(videos_dir.glob('*_no_watermark.mp4'))
-        # for no_watermark_mp4_file in no_watermark_mp4_files:
-        #     first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_mp4_file)
-        #     self.thumbnail_generator.generate_thumbnail_image(input_filename=first_frame, text='Hello World')
+        thumbnail_lines = read_lines(thumbnail_lines_file)
+        for thumbnail_line in thumbnail_lines:
+            first_part, outside_text, _ = process_text(thumbnail_line)
+            no_watermark_mp4_file = videos_dir / f'{first_part}_no_watermark.mp4'
+            if Path(no_watermark_mp4_file).exists:
+                first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_mp4_file)
+                self.thumbnail_generator.generate_thumbnail_image(
+                    input_filename=first_frame.name.split('_')[0],
+                    input_image_path=first_frame,
+                    text=outside_text)
+
+                self.thumbnail_generator.generate_thumbnail_videos()  # Generate thumbnail videos
 
         # endregion
 
 
 # Example usage:
-lines_file = r"D:\Projects\Python\VideoFactory\data\output\processed\anecdotes about friendship_DeepAi\lines_anecdotes about friendship_DeepAi.txt"
-thumbnail_lines_file = r"D:\Projects\Python\VideoFactory\data\output\processed\anecdotes about friendship_DeepAi\thumbnail_lines_anecdotes about friendship_DeepAi.txt"
-images_dir = r"D:\Projects\Python\VideoFactory\data\output\processed\anecdotes about friendship_DeepAi"
+lines_file = r"lines.txt"
+thumbnail_lines_file = r"thumbnail_lines.txt"
+images_dir = r"images"
 workflow_manager = WorkflowManager()  # Create an instance of WorkflowManager
-# workflow_manager.generate_talking_head_videos(lines_file, thumbnail_lines_file, images_dir)
+workflow_manager.generate_talking_head_videos(lines_file, thumbnail_lines_file, images_dir)
 output_dir = Path(lines_file).parent / Path(lines_file).stem
-workflow_manager.edit_talking_head_videos(images_dir=images_dir, videos_dir=output_dir)
+workflow_manager.edit_talking_head_videos(thumbnail_lines_file=thumbnail_lines_file,
+                                          images_dir=images_dir, videos_dir=output_dir)
