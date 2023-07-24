@@ -1,6 +1,10 @@
 from .apis.llm.gpt4free_llm import gpt4freeLLM
 from langchain import PromptTemplate, FewShotPromptTemplate
 from typing import List
+from ._prompts import examples_quote, prefix_quote, examples_image, prefix_image
+
+import configparser
+from pathlib import Path
 
 
 class TextGenerator:
@@ -8,9 +12,31 @@ class TextGenerator:
         'g4f': gpt4freeLLM,
     }
 
-    def __init__(self, llm_provider) -> None:
+    def __init__(self, llm_provider, processed_dir=None,
+                 examples_quote=examples_quote, prefix_quote=prefix_quote,
+                 examples_image=examples_image, prefix_image=prefix_image) -> None:
         self.llm_provider = llm_provider
         self.llm = self._create_llm_instance()
+        self.processed_dir = processed_dir
+
+        self.examples_quote = examples_quote  # Add examples_quote as a class variable
+        self.prefix_quote = prefix_quote      # Add prefix_quote as a class variable
+        self.examples_image = examples_image  # Add examples_image as a class variable
+        self.prefix_image = prefix_image      # Add prefix_image as a class variable
+
+        # Get the path of the current script (absolute path)
+        current_script_path = Path(__file__).resolve()
+        # Get the project folder (VideoFactory)
+        project_folder = current_script_path.parent.parent.parent
+        # Construct the path to config.ini in the parent folder
+        config_path = project_folder / "config.ini"
+        # Read the configuration file
+        config = configparser.ConfigParser()
+        config.read(config_path)
+
+        # Use Path concatenation for processed_dir
+        self.processed_dir = Path(processed_dir or
+                                  project_folder / config.get('paths', 'processed_dir'))
 
     def _create_llm_instance(self):
         LLMClass = self.LLM_CLASSES.get(self.llm_provider)
