@@ -100,17 +100,29 @@ class WorkflowManager:
 
                 # Generate audio files from the text in 'lines_file' using TTS generator
                 # The output audio files will be saved in the 'script_folder' directory.
-                script_file = script_folder / 'script.txt'
-                if (script_file.exists):
-                    audio_files = self.tts_generator.generate_audios_from_txt(
-                                                                input_file=script_file,
-                                                                output_dir=script_folder)
 
-                    # Merge the generated audio files with padding to create a single audio file
-                    # The merged audio file will be saved in the 'output_dir'.
-                    self.audio_editor.input_audio_files = audio_files
-                    self.audio_editor.merge_audios_with_padding(output_dir=output_dir,
-                                                                name=script_folder.name)
+                # Construct the Path to the script text file
+                script_file = script_folder / 'script.txt'
+
+                # Check if the script file exists
+                if script_file.exists():
+                    # Create a Path object for the audio file with the same
+                    # name as the'script_folder' but with the extension '.wav'
+                    audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
+
+                    # Check if the audio file does not exist
+                    if not audio_file.exists():
+                        audio_files = self.tts_generator.generate_audios_from_txt(
+                                                                    input_file=script_file,
+                                                                    output_dir=script_folder)
+
+                        # Merge the generated audio files with padding to create a single audio file
+                        # The merged audio file will be saved in the 'output_dir'.
+                        self.audio_editor.input_audio_files = audio_files
+                        self.audio_editor.merge_audios_with_padding(output_dir=output_dir,
+                                                                    name=script_folder.name)
+                    else:
+                        print(f'{audio_file} already exists. Skipping...')
             # endregion
 
             # region Step 2: GENERATE D-ID VIDEOS
@@ -134,12 +146,10 @@ class WorkflowManager:
 
             # Set the key for the video generator by rotating through a list of keys.
             # The video generator will use the provided key for generating videos.
-            self.video_generator.rotate_key(  # List of available keys
-                                            keys=os.environ.get('D-ID_BASIC_TOKENS'))
-
             output_ids_file = self.video_generator.create_talk_videos_from_images_and_audios(
                 images_and_audios_dict=images_and_audios_dict,
-                output_dir=output_dir)
+                output_dir=output_dir,
+                keys=os.environ.get('D-ID_BASIC_TOKENS'))
 
             # # This line is only for debugging purposes.
             # output_ids_file = Path(output_dir) / 'd-id_output_ids.json'
@@ -209,7 +219,7 @@ class WorkflowManager:
         for thumbnail_line in thumbnail_lines:
             first_part, outside_text, _ = process_text(thumbnail_line)
             no_watermark_mp4_file = videos_dir / f'{first_part}_no_watermark.mp4'
-            if Path(no_watermark_mp4_file).exists:
+            if Path(no_watermark_mp4_file).exists():
                 first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_mp4_file)
                 self.thumbnail_generator.generate_thumbnail_image(
                     input_filename=first_frame.name.split('_')[0],
@@ -398,8 +408,10 @@ class WorkflowManager:
 
 
 # Example usage:
+# ------------------------------------
 workflow_manager = WorkflowManager()  # Create an instance of WorkflowManager
 
+# region Step #1: GENERATE QUOTES -> GENERATE IMAGE PROMPTS -> GENERATE IMAGES
 quotes_file_path, shorts_file_path = workflow_manager.generate_quotes()
 
 # quotes_file_path = r'inspiring_quotes.txt'
@@ -409,14 +421,17 @@ csv_dir = workflow_manager.generate_image_prompts_from_txt(input_file=quotes_fil
 # csv_dir = r'VideoFactory\data\output\processed\inspiring_quotes'
 images_dir = workflow_manager.generate_images_from_csv(csv_dir)
 
-
 lines_file = quotes_file_path
 thumbnail_lines_file = shorts_file_path
+# endregion
 
-# lines_file = r"lines.txt"
-# thumbnail_lines_file = r"thumbnail_lines.txt"
-# images_dir = r"images"
+# region Step #2: GENERATE TALKING HEAD VIDEOS -> EDIT TALKING HEAD VIDEOS
+lines_file = r"lines.txt"
+thumbnail_lines_file = r"thumbnail_lines.txt"
+images_dir = r"images"
+
 workflow_manager.generate_talking_head_videos(lines_file, thumbnail_lines_file, images_dir)
 output_dir = Path(lines_file).parent / Path(lines_file).stem
 workflow_manager.edit_talking_head_videos(thumbnail_lines_file=thumbnail_lines_file,
                                           images_dir=images_dir, videos_dir=output_dir)
+# endregion
