@@ -9,7 +9,7 @@ __pycache__/
 temp/
 data/output/processed/*
 data/output/processed_videos/*
-videofactory/legacy
+legacy
 
 !data/output/processed/.gitkeep
 !data/output/processed_videos/.gitkeep
