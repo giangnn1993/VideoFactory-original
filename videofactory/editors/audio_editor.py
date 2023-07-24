@@ -58,6 +58,7 @@ class AudioEditor:
         # Execute the command
         # print(command)
         self.run_command(command)
+        print(f'Audio saved successfully to {basepath}.wav')
 
 
 # # USAGE
