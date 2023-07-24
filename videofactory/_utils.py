@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import List
+import json
 
 
 def read_lines(file_path):
@@ -115,3 +116,92 @@ def create_script_folders(txt_file: str, split_lines=False, delimiter: str = '.'
 
     # Return the list of folder paths
     return folder_paths
+
+
+def parse_response_quote(input_query: str, provider_name, json_data):
+    try:
+        # Parse the JSON data
+        parsed_data = json.loads(json_data)
+
+        # Check if the required fields are present in the JSON data
+        required_fields = ["topic", "quotes"]
+        for field in required_fields:
+            if field not in parsed_data:
+                print(f"Invalid JSON format: '{field}' field is required.")
+                return
+
+        # Check if the 'quotes' field is a list
+        if not isinstance(parsed_data["quotes"], list):
+            print("Invalid JSON format: 'quotes' field should be a list.")
+            return
+
+        # Access the values in the parsed JSON data
+        topic = parsed_data["topic"]
+        quotes = parsed_data["quotes"]
+
+        topic_list = []
+        quote_list = []
+        short_list = []
+        input_query_list = [input_query] * len(quotes)
+        provider_name_list = [provider_name] * len(quotes)
+
+        for quote in quotes:
+            # Check if the required keys ('quote' and 'short') are present in each quote dictionary
+            required_quote_keys = ["quote", "short"]
+            for quote_key in required_quote_keys:
+                if quote_key not in quote:
+                    print(f"Invalid JSON format: '{quote_key}' key is missing in a quote.")
+                    return
+
+            topic_list.append(topic)
+            quote_list.append(quote["quote"])
+            short_list.append(quote["short"])
+
+        return input_query_list, provider_name_list, topic_list, quote_list, short_list
+
+    except json.JSONDecodeError:
+        print("Invalid JSON format: Unable to parse the provided JSON data.")
+        return
+
+
+def parse_response_image(input_query: str, provider_name, json_data):
+    try:
+        # Parse the JSON data
+        parsed_data = json.loads(json_data)
+        print(parsed_data)
+
+        # Check if the required fields are present in the JSON data
+        required_fields = ["topic", "prompt"]
+        for field in required_fields:
+            if field not in parsed_data:
+                print(f"Invalid JSON format: '{field}' field is required.")
+                return
+
+        # Check if the 'prompt' field is a dictionary
+        if not isinstance(parsed_data["prompt"], dict):
+            print("Invalid JSON format: 'prompt' field should be a dictionary.")
+            return
+
+        # Access the values in the parsed JSON data
+        topic = parsed_data["topic"]
+        prompts = parsed_data["prompt"]
+
+        # Check if all the keys
+        # ('media', 'subject', 'describe', 'art')
+        # are present in the 'prompt' dictionary
+        required_prompt_keys = ["media", "subject", "describe", "art"]
+        for prompt_key in required_prompt_keys:
+            if prompt_key not in prompts:
+                print(f"Invalid JSON format: '{prompt_key}' key is missing in 'prompt' dictionary.")
+                return
+
+        media = prompts["media"]
+        subject = prompts["subject"]
+        describe = prompts["describe"]
+        art = prompts["art"]
+
+        return input_query, provider_name, topic, media, subject, describe, art
+
+    except json.JSONDecodeError:
+        print("Invalid JSON format: Unable to parse the provided JSON data.")
+        return
