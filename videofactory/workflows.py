@@ -14,11 +14,16 @@ from _utils import (
     process_text,
     get_basenames,
     create_images_and_audios_dict,
-    create_script_folders
+    create_script_folders,
+    parse_response_quote,
+    parse_response_image
 )
 
 from editors.video_editor import VideoEditor
 from editors.audio_editor import AudioEditor
+
+import pandas as pd
+import csv
 
 
 class WorkflowManager:
@@ -215,14 +220,202 @@ class WorkflowManager:
 
         # endregion
 
+    def generate_quotes(self, input_query=None):
+        if input_query is None:
+            input_query = input('Enter query:').strip()
+
+        # Then, call the generate_chat_responses function with a query:
+        prompt = self.text_generator.create_few_shot_prompt_template(
+            query=input_query,
+            examples=self.text_generator.examples_quote,
+            prefix=self.text_generator.prefix_quote
+        )
+        responses = self.text_generator.generate_chat_responses(query=prompt)
+        # Iterate over the responses and print the response and provider name
+        if responses is not None:
+            # Lists to capture all quote_list and short_list values
+            all_quotes = []
+            all_shorts = []
+
+            basepath = self.text_generator.processed_dir / f'{input_query}'
+            for response, provider_name in responses:
+                print('+-----------------------------------------------------------------------------+')
+                print(f' User: {input_query} ')
+                print(f' {provider_name}: ')
+
+                result_lists = parse_response_quote(input_query, provider_name, json_data=response)
+
+                # Append quote_list and short_list to the respective all_quotes and all_shorts lists
+                all_quotes.extend(result_lists[3])  # quote_list
+                all_shorts.extend(result_lists[4])  # short_list
+
+                df = pd.DataFrame(
+                    {
+                        "input_query": result_lists[0],  # input_query_list
+                        "provider_name": result_lists[1],  # provider_name_list
+                        "topic": result_lists[2],  # topic_list
+                        "quote": result_lists[3],  # quote_list
+                        "short": result_lists[4]  # short_list
+                    }
+                )
+
+                # Save DataFrame to a CSV file
+                csv_file_path = f'{basepath}_{provider_name}.csv'
+                df.to_csv(csv_file_path, index=False)
+
+            # Write all_quotes to a TXT file with zero-padded index numbers
+            quotes_file_path = f'{basepath}_quotes.txt'
+            with open(quotes_file_path, "w", encoding='utf-8') as f:
+                for i, quote in enumerate(all_quotes, start=1):
+                    # Calculate the zero-padding for the index number based on the maximum line number
+                    max_line_number = len(str(len(all_quotes)))
+                    f.write(f"[{str(i).zfill(max_line_number)}] {quote}\n")
+
+            # Write all_shorts to a TXT file with zero-padded index numbers
+            shorts_file_path = f'{basepath}_shorts.txt'
+            with open(shorts_file_path, "w", encoding='utf-8') as f:
+                for i, short in enumerate(all_shorts, start=1):
+                    # Calculate the zero-padding for the index number based on the maximum line number
+                    max_line_number = len(str(len(all_shorts)))
+                    f.write(f"[{str(i).zfill(max_line_number)}] {short}\n")
+
+            return quotes_file_path, shorts_file_path
+
+        else:
+            print('Error occurred while generating chat response')
+            return
+
+    def generate_image_prompts_from_txt(self, input_file, output_dir=None):
+        quotes_list = read_lines(input_file)
+        # Calculate the zero-padding for the index number based on the maximum line number
+        max_line_number = len(str(len(quotes_list)))
+
+        for i, quote in enumerate(quotes_list, start=1):
+            prompt = self.text_generator.create_few_shot_prompt_template(
+                query=quote,
+                examples=self.text_generator.examples_image,
+                prefix=self.text_generator.prefix_image
+            )
+            responses = self.text_generator.generate_chat_responses(query=prompt)
+
+            # Get the output directory path based on the input file name
+            output_dir = Path(self.text_generator.processed_dir / Path(input_file).stem)
+            # Create the output directory if it doesn't exist
+            output_dir.mkdir(exist_ok=True)
+            # Extract the first part of the quote using the process_text function
+            first_part, _, _ = process_text(quote)
+            # Create the base path for the prompts file within the output directory
+            basepath = output_dir / first_part
+            # Generate the file path for the prompts file
+            prompts_file_path = f'{basepath}_automatic1111.txt'
+
+            # Iterate over the responses and print the response and provider name
+            if responses is not None:
+                # Lists to capture all quote_list and short_list values
+                # all_topics = []
+                all_prompts = []
+
+                for response, provider_name in responses:
+                    print('+-----------------------------------------------------------------------------+')
+                    print(f' User: {quote} ')
+                    print(f' {provider_name}: ')
+
+                    result_lists = parse_response_image(quote, provider_name, json_data=response)
+                    if (result_lists):
+                        # Append values to the all_topic and all_prompts lists
+                        # all_topics.extend(result_lists[2])  # topic_list
+
+                        # Concatenate media, subject, describe, and art with commas
+                        all_prompts.append(",".join(result_lists[3:7]))
+
+                        df = pd.DataFrame(
+                            {
+                                "input_query": [result_lists[0]],  # input_query
+                                "provider_name": [result_lists[1]],  # provider_name
+                                "topic": result_lists[2],  # topic
+                                "media": result_lists[3],  # media
+                                "subject": result_lists[4],  # subject
+                                "describe": result_lists[5],  # describe
+                                "art": result_lists[6]  # art
+                            }
+                        )
+                        # Save DataFrame to a CSV file
+                        csv_file_path = f'{basepath}_{provider_name}_automatic1111.csv'
+                        df.to_csv(csv_file_path, index=False)
+
+                # Write all_prompts to a TXT file with zero-padded index numbers
+                with open(prompts_file_path, "w", encoding='utf-8') as f:
+                    for prompt in all_prompts:
+                        # Calculate the zero-padding for the index number based on the maximum line number
+                        f.write(f"[{str(i).zfill(max_line_number)}] {prompt}\n")
+
+                # return prompts_file_path
+
+            else:
+                print('Error occurred while generating chat response')
+                with open(prompts_file_path, "w", encoding='utf-8') as f:
+                    f.write(f"[{str(i).zfill(max_line_number)}]\n")
+                # return
+
+        return output_dir
+
+    def generate_images_from_csv(self, csv_dir):
+        # Convert csv_dir to a Path object
+        csv_dir = Path(csv_dir)
+
+        # Scan csv_dir for csv files
+        csv_files = csv_dir.glob('*.csv')
+
+        # Loop through the csv files
+        for csv_file in csv_files:
+            # Assign 'basename' as the first part of the filename divided by "_"
+            basename = csv_file.stem.split('_')[0]
+
+            # Read the csv file and skip the header
+            with open(csv_file, 'r') as file:
+                reader = csv.reader(file)
+                next(reader)  # Skip the header
+
+                # Process each line in the csv file
+                for line in reader:
+                    # Assign 'prompt' as a joined string of values for 4 columns: media, subject, describe, art
+                    prompt = ','.join(line[3:7])
+
+                    # Assign 'output_path' as basename + '_' + value of column 'provider_name' + '.png'
+                    output_path = csv_dir / f"{basename}_{line[1]}.png"
+
+                    print('+-----------------------------------------------------------------------------+')
+                    print(f'Generating image with prompt: {prompt}')
+                    print()
+                    print(f'Saving image to: {output_path}')
+                    print()
+                    self.image_generator.generate_image_from_text(prompt=prompt, output_path=output_path)
+                    print()
+                    print(f'Image saved successfully to {output_path}')
+                    print()
+
+        return csv_dir
+
 
 # Example usage:
-lines_file = r"lines.txt"
-thumbnail_lines_file = r"thumbnail_lines.txt"
-images_dir = r"images"
-
 workflow_manager = WorkflowManager()  # Create an instance of WorkflowManager
 
+quotes_file_path, shorts_file_path = workflow_manager.generate_quotes()
+
+# quotes_file_path = r'inspiring_quotes.txt'
+# shorts_file_path = r'inspiring_shorts.txt'
+csv_dir = workflow_manager.generate_image_prompts_from_txt(input_file=quotes_file_path)
+
+# csv_dir = r'VideoFactory\data\output\processed\inspiring_quotes'
+images_dir = workflow_manager.generate_images_from_csv(csv_dir)
+
+
+lines_file = quotes_file_path
+thumbnail_lines_file = shorts_file_path
+
+# lines_file = r"lines.txt"
+# thumbnail_lines_file = r"thumbnail_lines.txt"
+# images_dir = r"images"
 workflow_manager.generate_talking_head_videos(lines_file, thumbnail_lines_file, images_dir)
 output_dir = Path(lines_file).parent / Path(lines_file).stem
 workflow_manager.edit_talking_head_videos(thumbnail_lines_file=thumbnail_lines_file,
