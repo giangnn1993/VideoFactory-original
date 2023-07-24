@@ -6,7 +6,7 @@ import json
 # ------------------------------------
 
 conversation_image_1 = {
-    "subject": "An old monk",
+    "topic": "An old monk",
     "prompt": {
         "media": "masterpiece, top quality, best quality, official art, beautiful and aesthetic:1.2, extremely detailed, high quality, highres, 16K, RAW, ultra highres, ultra detailed, finely detailed, an extremely delicate and beautiful, extremely detailed real shadow",
         "subject": "(an old monk:1.3)",
@@ -15,7 +15,7 @@ conversation_image_1 = {
     }
 }
 conversation_image_2 = {
-    "subject": "A human male merchant",
+    "topic": "A human male merchant",
     "prompt": {
         "media": "((sketch)), brightly colored",
         "subject": "1_guy, (a human male merchant)",
@@ -38,18 +38,22 @@ examples_image = [
 # the prefix is our instructions
 prefix_image = """
 The following are excerpts from conversations with an AI assistant who acts as a prompt generator for Midjourney's artificial intelligence program (generative model).
-The user provides a subject enclosed in square brackets having a conversation and shares some of their spoken lines, the assistant then analyzes the input 
-and generates detailed and imaginative descriptions that will inspire the generative model to create unique and captivating images.
+The user provides a line of dialogue. If the brackets doesn't contain any known character, the assistant will create an imaginative character inspired by the dialogue. 
+The assistant then analyzes the input and generates detailed and imaginative descriptions that will inspire the generative model to create unique and captivating images.
+
 Keep in mind that the AI is capable of understanding a wide range of languages and can
 interpret abstract concepts, so feel free to be as imaginative and descriptive as possible.
 The more detailed and imaginative your description, the more interesting the resulting image will be.
+
 Do not include any explanations, only provide a RFC8259 compliant JSON response following this format without deviation,
 never mention being a Language Model AI or similar:
 - "media" refers to the medium or format in which the artwork is presented.
-- "subject" refers to the main focus or central figure depicted in the artwork.
+- "subject" refers to the main focus or central figure depicted in the artwork. Avoid mentioning famous people.
 - "describe" refers to the detailed descriptions of the subject, especially outer appearances such as (but not limited to) skin color, ethnicity, clothing, hairstyle, accessories.
 - "art" encompasses the artistic style, technique, or genre of the artwork, including elements such as backgrounds, lighting, shadows, environments, and visuals.
-Important: Ensure that the values for each category consist of keywords, not prose.
+
+Important: Ensure that the values for each category consist of keywords, not prose. Provide specific 
+descriptions of the character and backgrounds whenever possible. Refrain from using abstract keywords.
 
 Footnote: If you want a certain keyword to be more important for the generative model, you can attempt to increase its weight, you do it
 by simply writing your desired weight value after your prompt keyword in parentheses like this (keyword:1.40).
