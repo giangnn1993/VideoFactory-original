@@ -45,35 +45,51 @@ class VideoGenerator:
         self.vidgen.get_animation(id=id, **kwargs)
 
     def create_talk_videos_from_images_and_audios(self,
-                                                  images_and_audios_dict: Dict,
-                                                  output_dir: str, **kwargs) -> Path:
+                                                  images_and_audios_dict: Dict, output_dir: str,
+                                                  keys: str = None, **kwargs) -> Path:
         output_ids_file = Path(output_dir) / 'd-id_output_ids.json'
 
         for basename, data_dict in images_and_audios_dict.items():
+            # If keys argument is provided, call rotate_key with the provided keys
+            if keys is not None:
+                self.rotate_key(keys=keys)
+
+            # Get the paths of the image and audio files from the dictionary
             image_path = data_dict["image"]
             audio_path = data_dict["audio"]
 
-            id = self.create_talk_video(image=image_path, audio=audio_path, **kwargs)
+            # Path to the generated D-ID talk video file
+            d_id_file = Path(output_dir) / f'{basename}_d_id.mp4'
+            #
+            #  Check if the output IDs file does not exist
+            if not d_id_file.exists():
+                # Create the D-ID talk video
+                id = self.create_talk_video(image=image_path, audio=audio_path, **kwargs)
 
-            if not output_ids_file.exists():
-                # Create d-id_output_ids.json with empty dictionary content if it does not exist
+                # Check if the output IDs file does not exist
+                if not output_ids_file.exists():
+                    # Create d-id_output_ids.json with empty dictionary content if it does not exist
+                    with open(output_ids_file, 'w') as outfile:
+                        json.dump({}, outfile)
+
+                # Read the existing json data from d-id_output_ids.json
+                with open(output_ids_file, 'r') as infile:
+                    json_object = json.load(infile)
+
+                # Use a defaultdict to initialize missing sub-dictionaries
+                json_object = defaultdict(dict, json_object)
+
+                # Add new key-value pair to the dictionary
+                print(f"D-ID: {id}")
+                print()
+                json_object[self.vidgen.key][basename] = id
+
+                # Write the updated dictionary to d-id_output_ids.json in the output_dir
                 with open(output_ids_file, 'w') as outfile:
-                    json.dump({}, outfile)
-
-            # Read the existing json data from d-id_output_ids.json
-            with open(output_ids_file, 'r') as infile:
-                json_object = json.load(infile)
-
-            # Use a defaultdict to initialize missing sub-dictionaries
-            json_object = defaultdict(dict, json_object)
-
-            # Add new key-value pair to the dictionary
-            print(f"D-ID: {id}")
-            json_object[self.vidgen.key][basename] = id
-
-            # Write the updated dictionary to d-id_output_ids.json in the output_dir
-            with open(output_ids_file, 'w') as outfile:
-                json.dump(json_object, outfile)
+                    json.dump(json_object, outfile)
+            else:
+                # The D-ID talk video file already exists, skip creating it
+                print(f'{d_id_file} already exists. Skipping...')
 
         # Return the path of the d-id_output_ids.json file
         return output_ids_file
