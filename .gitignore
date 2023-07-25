@@ -1,15 +1,38 @@
-# Vscode
-.vscode
+# IDE and Editor specific files
+.vscode/
+*.vscode-workspace
+*.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-*$py.class
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
 
+# Ignore the virtual environment directory (if applicable)
+# Replace 'venv/' with your specific virtual environment folder if different
+venv/
+env/
+
+# Ignore any temporary files or folders
 temp/
+
+# Ignore generated output directories
 data/output/processed/*
 data/output/processed_videos/*
-legacy
 
+# Ignore legacy code or files
+legacy/
+
+# Exclude all files inside the processed and processed_videos directories
+data/output/processed/**
+data/output/processed_videos/**
+
+# But keep the '.gitkeep' files inside processed and processed_videos directories
 !data/output/processed/.gitkeep
 !data/output/processed_videos/.gitkeep
+
+# Environment variables
+.env
