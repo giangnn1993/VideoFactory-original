@@ -1,17 +1,35 @@
 from pathlib import Path
+from dotenv import load_dotenv
+
 from videofactory.workflows import WorkflowManager
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def generate_single_talking_head_video(workflow_manager: WorkflowManager):
     # Call methods to generate talking head video
     # Prompt User Inputs for Workflow Options
-    # line = input('Enter the text to generate TTS from: ')
-    # thumbnail_line = input('Enter the text to generate thumbnail from: ')
-    # image_file = Path(input('Enter the path to the image: '))
-    line = r"Love isn't about finding the perfect person. It's about seeing an imperfect person perfectly."
-    thumbnail_line = r"Love isn't about finding the perfect person."
-    image_file = Path(r'S:\Media\D-ID\testing\05_GetGpt.png')
-    print()
+    while True:
+        line = input('Enter the text to generate TTS from: ')
+        if line.strip():  # Check if the input is not empty or only whitespace
+            break
+        else:
+            print("Invalid input. Please enter the text to generate TTS from.")
+
+    while True:
+        thumbnail_line = input('Enter the text to generate thumbnail from: ')
+        if thumbnail_line.strip():  # Check if the input is not empty or only whitespace
+            break
+        else:
+            print("Invalid input. Please enter the text to generate thumbnail from.")
+
+    while True:
+        image_file = Path(input('Enter the path to the image: '))
+        if image_file.exists() and image_file.is_file():
+            break
+        else:
+            print("Invalid file path. Please enter a valid path to the image.")
 
     workflow_manager.generate_talking_head_video(line, thumbnail_line, image_file)
 
