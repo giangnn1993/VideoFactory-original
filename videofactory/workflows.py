@@ -230,7 +230,7 @@ class WorkflowManager:
 
     def generate_quotes(self, input_query=None):
         if input_query is None:
-            input_query = input('Enter query:').strip()
+            input_query = input('Enter a query to generate quotes from: ').strip()
 
         # Then, call the generate_chat_responses function with a query:
         prompt = self.text_generator.create_few_shot_prompt_template(
