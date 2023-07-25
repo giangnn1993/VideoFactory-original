@@ -28,27 +28,21 @@ def main():
     # endregion
 
     # region Step #2: GENERATE TALKING HEAD VIDEOS -> EDIT TALKING HEAD VIDEOS
-    if generate_quotes:
-        use_generated_lines = input('Do you want to use generated lines? (y/n): ').lower() == 'y'
-        if use_generated_lines:
-            lines_file = quotes_file_path
-            thumbnail_lines_file = shorts_file_path
-    else:
-        lines_file = Path(input('Enter the path to the lines file: '))
-        thumbnail_lines_file = Path(input('Enter the path to the thumbnail lines file: '))
-
-    if generate_images:
-        use_generated_images = input('Do you want to use generated images? (y/n): ').lower() == 'y'
-        if use_generated_images:
-            images_dir = generated_images_dir
-        else:
-            images_dir = Path(input('Enter the directory containing the images: '))
-    else:
-        images_dir = Path(input('Enter the directory containing the images: '))
-
     output_dir = None
 
     if generate_talking_head_videos:
+        if generate_quotes and input('Do you want to use generated lines? (y/n): ').lower() == 'y':
+            lines_file = quotes_file_path
+            thumbnail_lines_file = shorts_file_path
+        else:
+            lines_file = Path(input('Enter the path to the lines file: '))
+            thumbnail_lines_file = Path(input('Enter the path to the thumbnail lines file: '))
+
+        if generate_images and input('Do you want to use generated images? (y/n): ').lower() == 'y':
+            images_dir = generated_images_dir
+        else:
+            images_dir = Path(input('Enter the directory containing the images: '))
+
         output_dir = workflow_manager.generate_talking_head_videos
         (lines_file, thumbnail_lines_file, images_dir)
     else:
