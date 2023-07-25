@@ -64,7 +64,8 @@ def create_images_and_audios_dict(basenames, images_dir, audios_dir):
     return result_dict
 
 
-def create_script_folder(text: str, output_dir: str, split_lines=False, delimiter: str = '.') -> List[Path]:
+def create_script_folder(text: str, parent_dir: str, folder_name=None,
+                         split_lines=False, delimiter: str = '.') -> List[Path]:
     text = text.strip()
 
     # Check if both square brackets are present
@@ -76,7 +77,7 @@ def create_script_folder(text: str, output_dir: str, split_lines=False, delimite
         text_outside_brackets = (text[:start_index-1] + text[end_index+1:]).strip()
 
         # Generate folder path
-        folder_path = Path(output_dir) / text_inside_brackets.split('|')[0].strip()
+        folder_path = Path(parent_dir) / (folder_name or text_inside_brackets.split('|')[0].strip())
         folder_path.mkdir(parents=True, exist_ok=True)
 
         # Create the 'script.txt' file inside each folder
@@ -89,10 +90,23 @@ def create_script_folder(text: str, output_dir: str, split_lines=False, delimite
             else:
                 # Write the entire line to 'script.txt'
                 script_file.write(text)
-
-        return folder_path
     else:
-        print(f'Square brackets are not present in "{text}". Skipping...')
+        # Generate folder path
+        folder_path = Path(parent_dir) / (folder_name or 'temp')
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Create the 'script.txt' file inside each folder
+        script_file_path = folder_path / "script.txt"
+        with script_file_path.open('w', encoding='utf8') as script_file:
+            if split_lines:
+                # Split text_outside_brackets by the delimiter and write to 'script.txt'
+                items = [item.strip() for item in text.split(delimiter) if item.strip()]
+                script_file.write('\n'.join(f'{item}' for item in items))
+            else:
+                # Write the entire line to 'script.txt'
+                script_file.write(text)
+
+    return folder_path
 
 
 def create_script_folders(txt_file: str, split_lines=False, delimiter: str = '.') -> List[Path]:

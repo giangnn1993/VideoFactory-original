@@ -19,11 +19,13 @@ class AudioEditor:
             print(f"Command failed: {e}")
 
     def merge_audios_with_padding(self, output_dir: Path, name: str = None,
-                                  begin_end_delay: int = 500, between_delay: int = 1000):
+                                  begin_end_delay: int = 500, between_delay: int = 1000) -> Path:
         # If the 'name' argument is not provided, set it to None
         name = name or output_dir.name
         # Create the base path by combining the 'output_dir' and the 'name'
         basepath = output_dir / name
+        # Create the output path for the audio file
+        output_path = f'{basepath}.wav'
 
         # Create the filter complex argument
         filter_complex_args = []
@@ -51,14 +53,16 @@ class AudioEditor:
                     f'ffmpeg {input_arg} -filter_complex \"{filter_complex_arg}\" '
                     f'-map \"[out]\" \"{basepath}_temp.wav\" -y && '
                     f'ffmpeg -i \"{basepath}_temp.wav\" -af apad=pad_dur={begin_end_delay / 1000.0:.1f}s '
-                    f'\"{basepath}.wav\" -y && '
+                    f'\"{output_path}\" -y && '
                     f'del \"{basepath}_temp.wav\"'
                 )
 
         # Execute the command
         # print(command)
         self.run_command(command)
-        print(f'Audio saved successfully to {basepath}.wav')
+        print(f'Audio saved successfully to {output_path}')
+
+        return Path(output_path)
 
 
 # # USAGE

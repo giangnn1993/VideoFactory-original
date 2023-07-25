@@ -145,7 +145,7 @@ class VideoGenerator:
             remaining_credits = self.vidgen.get_credits()
             print('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')
             print(f"Current token: {self.vidgen.key}")
-            print(f"Current token index: {current_index}/{len(keys)}")
+            print(f"Current token index: {current_index+1}/{len(keys)}")
             print(f"REMAINING CREDITS: {remaining_credits}")
             print('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛')
 

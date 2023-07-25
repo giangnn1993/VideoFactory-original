@@ -60,13 +60,14 @@ class TTSGenerator:
         audio_files = []
 
         for i, line in enumerate(lines, start=1):
+            # Prepare output path for the generated audio file
+            filename = f'{str(i).zfill(max_line_number)}.wav'
+            output_path = Path(output_dir) / filename
+
             # Find the content inside square brackets using regex
             match = re.search(r'\[(.*?)\]', line)
             if match:
                 _, outside_text, config = process_text(line)
-                # Prepare output path for the generated audio file
-                filename = f'{str(i).zfill(max_line_number)}.wav'
-                output_path = Path(output_dir) / filename
                 # Check if the 'config' variable is not empty (evaluates to True).
                 if bool(config):
                     # Update the kwargs directly with the config dictionary
@@ -97,9 +98,15 @@ class TTSGenerator:
                         output_path=output_path,
                         **kwargs
                         )
+            else:
+                self.generate_audio(
+                    line,
+                    output_path=output_path,
+                    **kwargs
+                    )
 
-                # Append audio file to the list
-                audio_files.append(Path(output_path))
+            # Append audio file to the list
+            audio_files.append(Path(output_path))
 
         # Return the list of audio files
         return audio_files

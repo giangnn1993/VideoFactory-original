@@ -15,6 +15,7 @@ from ._utils import (
     process_text,
     get_basenames,
     create_images_and_audios_dict,
+    create_script_folder,
     create_script_folders,
     parse_response_quote,
     parse_response_image
@@ -400,5 +401,41 @@ class WorkflowManager:
 
         return csv_dir
 
-    def generate_talking_head_video(line: str, thumbnail_line: str, image_file: Path):
-        pass
+    def generate_talking_head_video(self, line: str, thumbnail_line: str, image_file: Path):
+
+        # region Step 1: GENERATE AUDIO
+        # ------------------------------------
+        script_folder = Path(create_script_folder(text=line,
+                                                  parent_dir=image_file.parent,
+                                                  folder_name=image_file.stem))
+
+        audio_files = []
+        self.tts_generator.set_tts_provider(os.environ.get('TTS_PROVIDER'))
+        script_file = script_folder / 'script.txt'
+        output_dir = script_folder.parent
+        tts_file = None
+
+        if script_file.exists():
+            audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
+            if not audio_file.exists():
+                audio_files = self.tts_generator.generate_audios_from_txt(
+                                                                    input_file=script_file,
+                                                                    output_dir=script_folder)
+                self.audio_editor.input_audio_files = audio_files
+                tts_file = self.audio_editor.merge_audios_with_padding(
+                                                output_dir=output_dir,
+                                                name=script_folder.name)
+            else:
+                print(f'{audio_file} already exists. Skipping...')
+                tts_file = audio_file
+        # endregion
+
+        # region Step 2: GENERATE D-ID VIDEO
+        # ------------------------------------
+        if (tts_file):
+            output_path = image_file.with_stem(image_file.stem + '_d_id.mp4')
+            keys = os.environ.get('D-ID_BASIC_TOKENS')
+            self.video_generator.rotate_key(keys=keys)
+            id = self.video_generator.create_talk_video(image=image_file, audio=tts_file)
+            self.video_generator.get_talk(id=id, output_path=output_path)
+        # endregion
