@@ -115,6 +115,8 @@ class VideoEditor:
         return closest_match
 
     def remove_d_id_watermark(self, input_image, output_video=None):
+        output_video = output_video or self.input_video.replace("_d_id.mp4", "_no_watermark.mp4")
+
         # Resize video
         cmd_resize_video = (
             f'ffmpeg -i \"{self.input_video}\" -vf scale={self.width}:{self.height} '
@@ -152,7 +154,7 @@ class VideoEditor:
             f'ffmpeg -i \"{self.input_video.replace(".mp4", "_cropped_top.mp4")}\" '
             f'-i \"{input_image.replace(".png", "_cropped_bottom.png")}\" '
             f'-filter_complex vstack=inputs=2 '
-            f'\"{self.input_video.replace("_d_id.mp4", "_no_watermark.mp4")}\" -y'
+            f'\"{output_video}\" -y'
         )
         self.run_command(cmd_vstack_videos)
 
@@ -161,6 +163,8 @@ class VideoEditor:
         self.run_command(f'del \"{self.input_video.replace(".mp4", "_cropped_top.mp4")}\"')
         self.run_command(f'del \"{input_image.replace(".png", "_resized.png")}\"')
         self.run_command(f'del \"{input_image.replace(".png", "_cropped_bottom.png")}\"')
+
+        return output_video
 
     def merge_audio_files_with_fading_effects(self, basename=None):
 
