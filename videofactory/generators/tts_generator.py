@@ -6,7 +6,7 @@ from pathlib import Path
 from .apis.tts.coqui_tts import CoquiTTS
 from .apis.tts.elevenlabs_tts import ElevenLabsTTS
 from .apis.tts.fpt_tts import FptTTS
-from _utils import process_text
+from ._utils import process_text
 
 
 class TTSGenerator:
