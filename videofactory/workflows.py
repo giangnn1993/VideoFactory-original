@@ -404,6 +404,10 @@ class WorkflowManager:
 
     def generate_talking_head_video(self, line: str, thumbnail_line: str, image_file: Path):
 
+        # Save 'line' and 'thumbnail_line' as text files
+        (image_file.parent / f'line_{image_file.stem}.txt').write_text(line, encoding='utf-8')
+        (image_file.parent / f'thumbnail_line_{image_file.stem}.txt').write_text(thumbnail_line, encoding='utf-8')
+
         # region Step 1: GENERATE AUDIO
         # ------------------------------------
         script_folder = Path(create_script_folder(text=line,
@@ -419,6 +423,7 @@ class WorkflowManager:
         if script_file.exists():
             audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
             if not audio_file.exists():
+                print(f'Generating audio: {line}')
                 audio_files = self.tts_generator.generate_audios_from_txt(
                                                                     input_file=script_file,
                                                                     output_dir=script_folder)
@@ -437,6 +442,7 @@ class WorkflowManager:
 
         if tts_file:
             if not d_id_file.exists():
+                print('Generating D-ID video...')
                 keys = os.environ.get('D-ID_BASIC_TOKENS')
                 self.video_generator.rotate_key(keys=keys)
                 id = self.video_generator.create_talk_video(image=str(image_file), audio=str(tts_file))
@@ -451,6 +457,7 @@ class WorkflowManager:
         # region Step 3: REMOVE D-ID WATERMARK
         # ------------------------------------
         if d_id_file.exists():
+            print('Removing watermark in D-ID video...')
             self.video_editor.input_video = str(d_id_file)
             no_watermark_file = Path(self.video_editor.remove_d_id_watermark(
                                                 input_image=str(image_file)))
@@ -465,6 +472,7 @@ class WorkflowManager:
 
         if no_watermark_file.exists():
             if not subtitled_file.exists():
+                print('Generating subtitle...')
                 subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
                 modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
                 subtitled_file = Path(self.subtitle_generator.burn_subtitle(
@@ -481,10 +489,12 @@ class WorkflowManager:
         # ------------------------------------
         if subtitled_file.exists():
             # Add music
+            print('Adding music...')
             self.video_editor.input_video = subtitled_file
             merged_video = Path(self.video_editor.merge_audio_files_with_fading_effects())
 
             # Add watermark text
+            print('Adding watermark text...')
             if merged_video.exists():
                 self.video_editor.input_video = merged_video
                 self.video_editor.add_watermark_text()
@@ -505,6 +515,7 @@ class WorkflowManager:
                 input_image_path=first_frame,
                 text=thumbnail_line))
             if thumbnail_image.exists():
+                print('Generating video with thumbnail...')
                 thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
                                                     thumbnail_image_name=thumbnail_image.name))
                 if thumbnail_video.exists():
