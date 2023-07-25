@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import pandas as pd
 
 from .generators.text_generator import TextGenerator
 from .generators.image_generator import ImageGenerator
@@ -21,9 +22,6 @@ from ._utils import (
 
 from .editors.video_editor import VideoEditor
 from .editors.audio_editor import AudioEditor
-
-import pandas as pd
-import csv
 
 
 class WorkflowManager:
@@ -369,6 +367,10 @@ class WorkflowManager:
 
         return output_dir
 
+
+
+        return csv_dir
+    
     def generate_images_from_csv(self, csv_dir):
         # Convert csv_dir to a Path object
         csv_dir = Path(csv_dir)
@@ -381,25 +383,23 @@ class WorkflowManager:
             # Assign 'basename' as the first part of the filename divided by "_"
             basename = csv_file.stem.split('_')[0]
 
-            # Read the csv file and skip the header
-            with open(csv_file, 'r') as file:
-                reader = csv.reader(file)
-                next(reader)  # Skip the header
+            # Read the csv file using pandas
+            df = pd.read_csv(csv_file)
 
-                # Process each line in the csv file
-                for line in reader:
-                    # Assign 'prompt' as a joined string of values for 4 columns: media, subject, describe, art
-                    prompt = ','.join(line[3:7])
+            # Process each row in the DataFrame
+            for _, row in df.iterrows():
+                # Assign 'prompt' as a joined string of values for 4 columns: media, subject, describe, art
+                prompt = ','.join(row[['media', 'subject', 'describe', 'art']])
 
-                    # Assign 'output_path' as basename + '_' + value of column 'provider_name' + '.png'
-                    output_path = csv_dir / f"{basename}_{line[1]}.png"
+                # Assign 'output_path' as basename + '_' + value of column 'provider_name' + '.png'
+                output_path = csv_dir / f"{basename}_{row['provider_name']}.png"
 
-                    print('+-----------------------------------------------------------------------------+')
-                    print(f'Generating image with prompt: {prompt}')
-                    print()
-                    print(f'Saving image to: {output_path}')
-                    self.image_generator.generate_image_from_text(prompt=prompt, output_path=output_path)
-                    print(f'Image saved successfully to {output_path}')
-                    print()
+                print('+-----------------------------------------------------------------------------+')
+                print(f'Generating image with prompt: {prompt}')
+                print()
+                print(f'Saving image to: {output_path}')
+                self.image_generator.generate_image_from_text(prompt=prompt, output_path=output_path)
+                print(f'Image saved successfully to {output_path}')
+                print()
 
         return csv_dir
