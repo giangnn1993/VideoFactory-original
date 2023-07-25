@@ -1,14 +1,14 @@
 import os
 from pathlib import Path
 
-from generators.text_generator import TextGenerator
-from generators.image_generator import ImageGenerator
-from generators.tts_generator import TTSGenerator
-from generators.video_generator import VideoGenerator
-from generators.subtitle_generator import SubtitleGenerator
-from generators.thumbnail_generator import ThumbnailGenerator
+from .generators.text_generator import TextGenerator
+from .generators.image_generator import ImageGenerator
+from .generators.tts_generator import TTSGenerator
+from .generators.video_generator import VideoGenerator
+from .generators.subtitle_generator import SubtitleGenerator
+from .generators.thumbnail_generator import ThumbnailGenerator
 
-from _utils import (
+from ._utils import (
     read_lines,
     compare_lines_lists,
     process_text,
@@ -19,8 +19,8 @@ from _utils import (
     parse_response_image
 )
 
-from editors.video_editor import VideoEditor
-from editors.audio_editor import AudioEditor
+from .editors.video_editor import VideoEditor
+from .editors.audio_editor import AudioEditor
 
 import pandas as pd
 import csv
@@ -405,33 +405,3 @@ class WorkflowManager:
                     print()
 
         return csv_dir
-
-
-# Example usage:
-# ------------------------------------
-workflow_manager = WorkflowManager()  # Create an instance of WorkflowManager
-
-# region Step #1: GENERATE QUOTES -> GENERATE IMAGE PROMPTS -> GENERATE IMAGES
-quotes_file_path, shorts_file_path = workflow_manager.generate_quotes()
-
-# quotes_file_path = r'inspiring_quotes.txt'
-# shorts_file_path = r'inspiring_shorts.txt'
-csv_dir = workflow_manager.generate_image_prompts_from_txt(input_file=quotes_file_path)
-
-# csv_dir = r'VideoFactory\data\output\processed\inspiring_quotes'
-images_dir = workflow_manager.generate_images_from_csv(csv_dir)
-
-lines_file = quotes_file_path
-thumbnail_lines_file = shorts_file_path
-# endregion
-
-# region Step #2: GENERATE TALKING HEAD VIDEOS -> EDIT TALKING HEAD VIDEOS
-lines_file = r"lines.txt"
-thumbnail_lines_file = r"thumbnail_lines.txt"
-images_dir = r"images"
-
-workflow_manager.generate_talking_head_videos(lines_file, thumbnail_lines_file, images_dir)
-output_dir = Path(lines_file).parent / Path(lines_file).stem
-workflow_manager.edit_talking_head_videos(thumbnail_lines_file=thumbnail_lines_file,
-                                          images_dir=images_dir, videos_dir=output_dir)
-# endregion
