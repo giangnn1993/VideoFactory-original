@@ -8,7 +8,6 @@ timeout /t 2 > nul
 echo ----------------------------
 echo.
 echo VideoFactory initialized successfully.
-echo.
 echo --------------------------------------
 echo.
 

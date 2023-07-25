@@ -2,17 +2,17 @@ from pathlib import Path
 from videofactory.workflows import WorkflowManager
 
 
-def main():
-    # Create an instance of WorkflowManager
-    workflow_manager = WorkflowManager()
-    # Call methods from the WorkflowManager class as needed
+def generate_single_talking_head_video(workflow_manager: WorkflowManager):
+    pass
 
+
+def batch_generate_talking_head_videos(workflow_manager: WorkflowManager):
+    # Call methods to batch generate talking head videos
     # Prompt User Inputs for Workflow Options
     generate_quotes = input('Do you want to generate quotes? (y/n): ').lower() == 'y'
     generate_images = input('Do you want to generate images? (y/n): ').lower() == 'y'
     generate_talking_head_videos = input('Do you want to generate talking head videos? (y/n): ').lower() == 'y'
     edit_talking_head_videos = input('Do you want to edit generated talking head videos? (y/n): ').lower() == 'y'
-    print()
 
     # region Step #1: GENERATE QUOTES -> GENERATE IMAGE PROMPTS -> GENERATE IMAGES
     if generate_quotes:
@@ -52,6 +52,32 @@ def main():
     if edit_talking_head_videos:
         workflow_manager.edit_talking_head_videos(thumbnail_lines_file, images_dir, output_dir)
     # endregion
+
+
+def main():
+    # Create an instance of WorkflowManager
+    workflow_manager = WorkflowManager()
+    # Call methods from the WorkflowManager class as needed
+
+    print("Welcome to VideoFactory!")
+    print("Choose a workflow option:")
+    print("1. Generate single talking head video")
+    print("2. Batch generate talking head videos")
+    print()
+
+    selected_option = int(input("Enter the number of the workflow option you want to execute: "))
+
+    if selected_option == 1:
+        generate_single_talking_head_video(workflow_manager)
+    elif selected_option == 2:
+        print()
+        print("\033[1;33m(Selected) 2. Batch generate talking head videos\033[0m")
+        print('----------------------------------')
+        print()
+        batch_generate_talking_head_videos(workflow_manager)
+    else:
+        print("Invalid option selected. Please try again.")
+        return
 
 
 if __name__ == "__main__":
