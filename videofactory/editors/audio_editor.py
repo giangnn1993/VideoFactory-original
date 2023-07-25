@@ -16,7 +16,7 @@ class AudioEditor:
         try:
             subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Command failed: {e}")
+            print(f"Command failed: {e}")
 
     def merge_audios_with_padding(self, output_dir: Path, name: str = None,
                                   begin_end_delay: int = 500, between_delay: int = 1000):

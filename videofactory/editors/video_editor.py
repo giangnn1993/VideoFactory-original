@@ -43,7 +43,7 @@ class VideoEditor:
         try:
             subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Command failed: {e}")
+            print(f"Command failed: {e}")
 
     @staticmethod
     def find_closest_audio_match(mp4_file, videos_dir=None):

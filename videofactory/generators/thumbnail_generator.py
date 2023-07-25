@@ -56,7 +56,7 @@ class ThumbnailGenerator:
         try:
             subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Command failed: {e}")
+            print(f"Command failed: {e}")
 
     def extract_first_frame(self, video_file, output_path=None):
         if output_path is None:
