@@ -398,9 +398,7 @@ class WorkflowManager:
                     print(f'Generating image with prompt: {prompt}')
                     print()
                     print(f'Saving image to: {output_path}')
-                    print()
                     self.image_generator.generate_image_from_text(prompt=prompt, output_path=output_path)
-                    print()
                     print(f'Image saved successfully to {output_path}')
                     print()
 
