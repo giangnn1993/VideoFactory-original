@@ -399,3 +399,6 @@ class WorkflowManager:
                 print()
 
         return csv_dir
+
+    def generate_talking_head_video(line: str, thumbnail_line: str, image_file: Path):
+        pass
