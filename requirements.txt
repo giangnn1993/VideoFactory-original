@@ -1,4 +1,5 @@
 # essentials
+dotenv
 requests
 stable-ts
 pysubs2
