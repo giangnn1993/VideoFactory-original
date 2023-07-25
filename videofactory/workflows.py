@@ -404,32 +404,32 @@ class WorkflowManager:
 
     def generate_talking_head_video(self, line: str, thumbnail_line: str, image_file: Path):
 
-        # Save 'line' and 'thumbnail_line' as text files
-        (image_file.parent / f'line_{image_file.stem}.txt').write_text(line, encoding='utf-8')
-        (image_file.parent / f'thumbnail_line_{image_file.stem}.txt').write_text(thumbnail_line, encoding='utf-8')
-
         # region Step 1: GENERATE AUDIO
         # ------------------------------------
         script_folder = Path(create_script_folder(text=line,
                                                   parent_dir=image_file.parent,
                                                   folder_name=image_file.stem))
 
+        # Save 'line' and 'thumbnail_line' as text files
+        (script_folder / f'line_{image_file.stem}.txt').write_text(line, encoding='utf-8')
+        (script_folder / f'thumbnail_line_{image_file.stem}.txt').write_text(thumbnail_line, encoding='utf-8')
+
         audio_files = []
         self.tts_generator.set_tts_provider(os.environ.get('TTS_PROVIDER'))
         script_file = script_folder / 'script.txt'
-        output_dir = script_folder.parent
+        # output_dir = script_folder.parent
         tts_file = None
 
         if script_file.exists():
             audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
             if not audio_file.exists():
-                print(f'Generating audio: {line}')
+                print(f'Generating audio... ({line})')
                 audio_files = self.tts_generator.generate_audios_from_txt(
                                                                     input_file=script_file,
                                                                     output_dir=script_folder)
                 self.audio_editor.input_audio_files = audio_files
                 tts_file = self.audio_editor.merge_audios_with_padding(
-                                                output_dir=output_dir,
+                                                output_dir=script_folder,
                                                 name=script_folder.name)
             else:
                 print(f'{audio_file} already exists. Skipping...')
@@ -438,17 +438,17 @@ class WorkflowManager:
 
         # region Step 2: GENERATE D-ID VIDEO
         # ------------------------------------
-        d_id_file = Path(output_dir / (image_file.stem + '_d_id.mp4'))
+        d_id_video = Path(script_folder / (image_file.stem + '_d_id.mp4'))
 
         if tts_file:
-            if not d_id_file.exists():
+            if not d_id_video.exists():
                 print('Generating D-ID video...')
                 keys = os.environ.get('D-ID_BASIC_TOKENS')
                 self.video_generator.rotate_key(keys=keys)
                 id = self.video_generator.create_talk_video(image=str(image_file), audio=str(tts_file))
-                self.video_generator.get_talk(id=id, output_path=d_id_file)
+                self.video_generator.get_talk(id=id, output_path=d_id_video)
             else:
-                print(f'{d_id_file} already exists. Skipping...')
+                print(f'{d_id_video} already exists. Skipping...')
         else:
             print(f"{tts_file} doesn't exists. Exiting...")
             return
@@ -456,30 +456,30 @@ class WorkflowManager:
 
         # region Step 3: REMOVE D-ID WATERMARK
         # ------------------------------------
-        if d_id_file.exists():
+        if d_id_video.exists():
             print('Removing watermark in D-ID video...')
-            self.video_editor.input_video = str(d_id_file)
+            self.video_editor.input_video = str(d_id_video)
             no_watermark_file = Path(self.video_editor.remove_d_id_watermark(
                                                 input_image=str(image_file)))
         else:
-            print(f"{d_id_file} doesn't exists. Exiting...")
+            print(f"{d_id_video} doesn't exists. Exiting...")
             return
         # endregion
 
         # region Step 4: ADD SUBTITLE
         # ------------------------------------
-        subtitled_file = Path(output_dir / (image_file.stem + '_no_watermark_subtitled.mp4'))
+        subtitled_video = Path(script_folder / (image_file.stem + '_no_watermark_subtitled.mp4'))
 
         if no_watermark_file.exists():
-            if not subtitled_file.exists():
+            if not subtitled_video.exists():
                 print('Generating subtitle...')
                 subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
                 modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
-                subtitled_file = Path(self.subtitle_generator.burn_subtitle(
+                subtitled_video = Path(self.subtitle_generator.burn_subtitle(
                                     input_video=no_watermark_file,
                                     subtitle_file=modified_subtitle_file))
             else:
-                print(f'{subtitled_file} already exists. Skipping...')
+                print(f'{subtitled_video} already exists. Skipping...')
         else:
             print("Video with watermark removed doesn't exists. Exiting...")
             return
@@ -487,10 +487,10 @@ class WorkflowManager:
 
         # region Step 5: EDIT
         # ------------------------------------
-        if subtitled_file.exists():
+        if subtitled_video.exists():
             # Add music
             print('Adding music...')
-            self.video_editor.input_video = subtitled_file
+            self.video_editor.input_video = subtitled_video
             merged_video = Path(self.video_editor.merge_audio_files_with_fading_effects())
 
             # Add watermark text
@@ -519,9 +519,9 @@ class WorkflowManager:
                 thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
                                                     thumbnail_image_name=thumbnail_image.name))
                 if thumbnail_video.exists():
-                    final_video_path = image_file.parent / thumbnail_video.name
-                    shutil.copy(thumbnail_video, final_video_path)
-                    print(f'Final video with thumbnail saved to "{final_video_path}"')
+                    final_video = Path(script_folder.parent / (image_file.stem + '.mp4'))
+                    shutil.copy(thumbnail_video, final_video)
+                    print(f'\033[92mFinal video with thumbnail saved to "{final_video}"\033[0m')
                     print()
             else:
                 print("Thumbnail image doesn't exists. Exiting...")

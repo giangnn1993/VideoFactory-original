@@ -60,7 +60,7 @@ class AudioEditor:
         # Execute the command
         # print(command)
         self.run_command(command)
-        print(f'Audio saved successfully to {output_path}')
+        print(f'Audio saved successfully to "{output_path}"')
 
         return Path(output_path)
 
