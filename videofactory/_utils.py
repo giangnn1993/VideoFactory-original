@@ -64,16 +64,44 @@ def create_images_and_audios_dict(basenames, images_dir, audios_dir):
     return result_dict
 
 
+def create_script_folder(text: str, output_dir: str, split_lines=False, delimiter: str = '.') -> List[Path]:
+    text = text.strip()
+
+    # Check if both square brackets are present
+    if '[' in text and ']' in text:
+        # Extract text inside and outside square brackets
+        start_index = text.find("[") + 1
+        end_index = text.find("]")
+        text_inside_brackets = text[start_index:end_index]
+        text_outside_brackets = (text[:start_index-1] + text[end_index+1:]).strip()
+
+        # Generate folder path
+        folder_path = Path(output_dir) / text_inside_brackets.split('|')[0].strip()
+        folder_path.mkdir(parents=True, exist_ok=True)
+
+        # Create the 'script.txt' file inside each folder
+        script_file_path = folder_path / "script.txt"
+        with script_file_path.open('w', encoding='utf8') as script_file:
+            if split_lines:
+                # Split text_outside_brackets by the delimiter and write to 'script.txt'
+                items = [item.strip() for item in text_outside_brackets.split(delimiter) if item.strip()]
+                script_file.write('\n'.join(f'[{text_inside_brackets}]{item}' for item in items))
+            else:
+                # Write the entire line to 'script.txt'
+                script_file.write(text)
+
+        return folder_path
+    else:
+        print(f'Square brackets are not present in "{text}". Skipping...')
+
+
 def create_script_folders(txt_file: str, split_lines=False, delimiter: str = '.') -> List[Path]:
     # Convert the input txt_file_path to a Path object
-    txt_file = Path(txt_file)
+    txt_file_path = Path(txt_file)
 
     # Read the contents of the txt file
-    with txt_file.open('r', encoding='utf8') as file:
+    with txt_file_path.open('r', encoding='utf8') as file:
         lines = file.readlines()
-
-    # Find the maximum line number for zfill
-    max_line_number = len(str(len(lines)))
 
     # List to store folder paths
     folder_paths = []
@@ -82,39 +110,35 @@ def create_script_folders(txt_file: str, split_lines=False, delimiter: str = '.'
     for i, line in enumerate(lines, start=1):
         line = line.strip()
 
-        # Extract text inside and outside square brackets
-        start_index = line.find("[") + 1
-        end_index = line.find("]")
-        text_inside_brackets = line[start_index:end_index]
-        text_outside_brackets = (line[:start_index-1] + line[end_index+1:]).strip()
+        # Check if both square brackets are present
+        if '[' in line and ']' in line:
+            # Extract text inside and outside square brackets
+            start_index = line.find("[") + 1
+            end_index = line.find("]")
+            text_inside_brackets = line[start_index:end_index]
+            text_outside_brackets = (line[:start_index-1] + line[end_index+1:]).strip()
 
-        # Create a folder for each line
-        folder_name = f"{str(i).zfill(max_line_number)}"
-        folder_path = txt_file.parent / txt_file.stem / folder_name
-        folder_path.mkdir(parents=True, exist_ok=True)
+            # Generate folder path
+            folder_path = txt_file_path.parent / txt_file_path.stem / text_inside_brackets.split('|')[0].strip()
+            folder_path.mkdir(parents=True, exist_ok=True)
 
-        # Append folder_path to the list
-        folder_paths.append(folder_path)
+            # Append folder_path to the list
+            folder_paths.append(folder_path)
 
-        # Create the 'script.txt' file inside each folder
-        script_file_path = folder_path / "script.txt"
-        with script_file_path.open('w', encoding='utf8') as script_file:
-            if split_lines:
-                # Split text_outside_brackets by the delimiter and write to 'script.txt'
-                count_non_empty_items = len([item for item in text_outside_brackets.split(delimiter) if item])
-                for index, item in enumerate(text_outside_brackets.split(delimiter)):
-                    # Only write to 'script.txt' if the item is not empty
-                    if item:
-                        # Write the item wrapped in square brackets and stripped
-                        script_file.write(f'[{text_inside_brackets}]{item.strip()}')
-                        # Add a new line character '\n' after each item, except for the last item
-                        if index < count_non_empty_items - 1:
-                            script_file.write('\n')
-            else:
-                # Write the entire line to 'script.txt'
-                script_file.write(line)
+            # Create the 'script.txt' file inside each folder
+            script_file_path = folder_path / "script.txt"
+            with script_file_path.open('w', encoding='utf8') as script_file:
+                if split_lines:
+                    # Split text_outside_brackets by the delimiter and write to 'script.txt'
+                    items = [item.strip() for item in text_outside_brackets.split(delimiter) if item.strip()]
+                    script_file.write('\\n'.join(f'[{text_inside_brackets}]{item}' for item in items))
+                else:
+                    # Write the entire line to 'script.txt'
+                    script_file.write(line)
 
-    # Return the list of folder paths
+        else:
+            print(f'Square brackets are not present in line {i}: "{line}". Skipping...')
+
     return folder_paths
 
 
