@@ -64,11 +64,12 @@ def create_images_and_audios_dict(basenames, images_dir, audios_dir):
     return result_dict
 
 
-def create_script_folder(text: str, parent_dir: str, folder_name=None,
-                         split_lines=False, delimiter: str = '.') -> List[Path]:
+def create_script_folder(text: str, parent_dir: str, folder_name: str = None,
+                         split_lines: bool = True, delimiter: str = '.') -> Path:
     text = text.strip()
+    text_inside_brackets = None
+    text_outside_brackets = None
 
-    # Check if both square brackets are present
     if '[' in text and ']' in text:
         # Extract text inside and outside square brackets
         start_index = text.find("[") + 1
@@ -76,35 +77,26 @@ def create_script_folder(text: str, parent_dir: str, folder_name=None,
         text_inside_brackets = text[start_index:end_index]
         text_outside_brackets = (text[:start_index-1] + text[end_index+1:]).strip()
 
-        # Generate folder path
-        folder_path = Path(parent_dir) / (folder_name or text_inside_brackets.split('|')[0].strip())
-        folder_path.mkdir(parents=True, exist_ok=True)
+    # Generate folder path
+    folder_name = folder_name or (text_inside_brackets.split('|')[0].strip()
+                                  if text_inside_brackets else 'temp')
+    folder_path = Path(parent_dir) / folder_name
+    folder_path.mkdir(parents=True, exist_ok=True)
 
-        # Create the 'script.txt' file inside each folder
-        script_file_path = folder_path / "script.txt"
-        with script_file_path.open('w', encoding='utf8') as script_file:
-            if split_lines:
-                # Split text_outside_brackets by the delimiter and write to 'script.txt'
-                items = [item.strip() for item in text_outside_brackets.split(delimiter) if item.strip()]
-                script_file.write('\n'.join(f'[{text_inside_brackets}]{item}' for item in items))
+    # Create the 'script.txt' file inside each folder
+    script_file_path = folder_path / "script.txt"
+    with script_file_path.open('w', encoding='utf8') as script_file:
+        if split_lines:
+            if text_inside_brackets:
+                lines = text_outside_brackets.split(delimiter)
+                script_file.write('\n'.join(f'[{text_inside_brackets}] {line.strip()}'
+                                            for line in lines if line.strip()))
             else:
-                # Write the entire line to 'script.txt'
-                script_file.write(text)
-    else:
-        # Generate folder path
-        folder_path = Path(parent_dir) / (folder_name or 'temp')
-        folder_path.mkdir(parents=True, exist_ok=True)
-
-        # Create the 'script.txt' file inside each folder
-        script_file_path = folder_path / "script.txt"
-        with script_file_path.open('w', encoding='utf8') as script_file:
-            if split_lines:
-                # Split text_outside_brackets by the delimiter and write to 'script.txt'
-                items = [item.strip() for item in text.split(delimiter) if item.strip()]
-                script_file.write('\n'.join(f'{item}' for item in items))
-            else:
-                # Write the entire line to 'script.txt'
-                script_file.write(text)
+                lines = text.split(delimiter)
+                script_file.write('\n'.join(f'{line.strip()}'
+                                            for line in lines if line.strip()))
+        else:
+            script_file.write(text)
 
     return folder_path
 
