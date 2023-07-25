@@ -3,7 +3,14 @@ from videofactory.workflows import WorkflowManager
 
 
 def generate_single_talking_head_video(workflow_manager: WorkflowManager):
-    pass
+    # Call methods to generate talking head video
+    # Prompt User Inputs for Workflow Options
+    line = Path(input('Enter the text to generate TTS from: '))
+    thumbnail_line = Path(input('Enter the text to generate thumbnail from: '))
+    image_file = Path(input('Enter the path to the image: '))
+    print()
+
+    workflow_manager.generate_talking_head_video(line, thumbnail_line, image_file)
 
 
 def batch_generate_talking_head_videos(workflow_manager: WorkflowManager):
