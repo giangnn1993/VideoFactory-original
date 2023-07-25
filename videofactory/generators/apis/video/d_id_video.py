@@ -45,7 +45,7 @@ class DidVideo(VideoGenerator):
             response.raise_for_status()  # Raises an exception for non-200 status codes
 
     def download_video_with_retry(self, url: str, output_path: str,
-                                  max_retries=3, retry_delay=5) -> None:
+                                  max_retries=4, retry_delay=5) -> None:
         for attempt in range(1, max_retries + 1):
             try:
                 self.download_video(self.key, url, output_path)
@@ -53,13 +53,14 @@ class DidVideo(VideoGenerator):
             except requests.RequestException as e:
                 print(f"Download failed (Attempt {attempt} of {max_retries}) - Error: {e}")
 
-            # Retry after a delay
+            # Retry after an exponential delay
             if attempt < max_retries:
                 print(f"Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
+                retry_delay *= 2  # Multiply the delay by 2 for the next attempt
 
-        # If all retries failed, raise an exception
-        raise Exception(f"Failed to download video from {url} after {max_retries} attempts.")
+        # If all retries failed, print the error message
+        print(f"Failed to download video from {url} after {max_retries} attempts.")
 
     def create_talk(
             self,
