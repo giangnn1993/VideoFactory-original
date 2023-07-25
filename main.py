@@ -12,6 +12,7 @@ def main():
     generate_images = input('Do you want to generate images? (y/n): ').lower() == 'y'
     generate_talking_head_videos = input('Do you want to generate talking head videos? (y/n): ').lower() == 'y'
     edit_talking_head_videos = input('Do you want to edit generated talking head videos? (y/n): ').lower() == 'y'
+    print()
 
     # region Step #1: GENERATE QUOTES -> GENERATE IMAGE PROMPTS -> GENERATE IMAGES
     if generate_quotes:
