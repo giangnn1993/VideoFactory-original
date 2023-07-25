@@ -19,7 +19,7 @@ class SubtitleGenerator:
 
         self.prepend_string = prepend_string or os.environ.get("SUBTITLE_PREPEND_STRING", None)
         self.style = style or os.environ.get("SUBTITLE_STYLE", "default")
-        self.model = stable_whisper.load_model('base')
+        self.model = model or stable_whisper.load_model('base')
 
         # Get the project folder (VideoFactory)
         project_folder = Path(__file__).resolve().parent.parent.parent

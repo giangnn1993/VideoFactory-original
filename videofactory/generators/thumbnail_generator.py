@@ -144,7 +144,11 @@ class ThumbnailGenerator:
             output_filename = input_filename[:-4]
         if not os.path.exists(self.temp_dir):
             os.mkdir(self.temp_dir)
+
+        output_path = os.path.join(self.temp_dir, output_filename + "_thumbnail.png")
         merged_image.save(os.path.join(self.temp_dir, output_filename + "_thumbnail.png"))
+
+        return output_path
 
     def generate_thumbnail_images(self):
         # Read the file
@@ -169,7 +173,9 @@ class ThumbnailGenerator:
         input_filename = input_filename + '.png'
         overlay_filename = self.overlay + '.png'
         text = text
-        self.merge_images(input_filename, overlay_filename, text, output_filename, input_image_path)
+        output_path = self.merge_images(input_filename, overlay_filename, text, output_filename, input_image_path)
+
+        return output_path
 
     def generate_thumbnail_videos(self):
         # Get all files in temp directory
@@ -180,33 +186,39 @@ class ThumbnailGenerator:
             # Check if the file ends with '_thumbnail.png'
             if file.endswith('_thumbnail.png'):
                 thumbnail_file = file
-                # Get the part before _
-                name = thumbnail_file.split('_')[0]
-                # Look for the mp4 file in the 'processed_videos' folder
-                mp4_filepath = os.path.join(self.processed_videos_dir, name + '_output_wm.mp4').replace("\\\\", "/")
-                # All paths use forward slash instead of backslash
-                thumbnail_filepath = os.path.join(self.temp_dir, thumbnail_file).replace("\\\\", "/")
-                thumbnail_resized_filepath = os.path.join(self.temp_dir, name + '_thumbnail_resized.png').replace("\\\\", "/")
-                mp4_thumbnail_filepath = os.path.join(self.temp_dir, name + '_thumbnail.mp4').replace("\\\\", "/")
-                mp4_output_wm_cover_filepath = os.path.join(self.processed_videos_dir, name + '_output_wm_thumbnail.mp4').replace("\\\\", "/")
+                self.generate_thumbnail_video(thumbnail_file)
 
-                command = (
-                    # Resize the thumbnail image to 540x960
-                    f'ffmpeg -i \"{thumbnail_filepath}\" -s 540x960 \"{thumbnail_resized_filepath}\" -y && '
-                    # Generate a loop video from the thumbnail image with a duration of 0.5s
-                    f'ffmpeg -loop 1 -i \"{thumbnail_resized_filepath}\" -f lavfi -i '
-                    f'anullsrc=channel_layout=stereo:sample_rate=44100 -c:v libx264 '
-                    f'-t 0.5 -r 30 -pix_fmt yuv420p -c:a aac -shortest \"{mp4_thumbnail_filepath}\" -y && '
-                    # Concatenate the thumbnail loop video with the watermarked video
-                    f'ffmpeg -i \"{mp4_thumbnail_filepath}\" -i \"{mp4_filepath}\" -filter_complex '
-                    f'"[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1" -c:v libx264 -preset veryfast '
-                    f'-crf 23 -c:a aac -b:a 128k \"{mp4_output_wm_cover_filepath}\" -y && '
-                    # Delete temporary files
-                    f'del \"{os.path.normpath(thumbnail_filepath)}\" '
-                    f'\"{os.path.normpath(thumbnail_resized_filepath)}\" '
-                    f'\"{os.path.normpath(mp4_thumbnail_filepath)}\" && '
-                    f'rmdir /q \"{self.temp_dir}\"'
-                )
-                # print(command)
-                # Run the command
-                self.run_command(command)
+    def generate_thumbnail_video(self, thumbnail_image_name):
+        # Get the part before _
+        name = thumbnail_image_name.split('_')[0]
+
+        # Look for the mp4 file in the 'processed_videos' folder
+        mp4_filepath = self.processed_videos_dir / (name + '_output_wm.mp4')
+
+        # All paths use forward slash instead of backslash
+        thumbnail_filepath = self.temp_dir / thumbnail_image_name
+        thumbnail_resized_filepath = self.temp_dir / (name + '_thumbnail_resized.png')
+        mp4_thumbnail_filepath = self.temp_dir / (name + '_thumbnail.mp4')
+        mp4_output_wm_cover_filepath = self.processed_videos_dir / (name + '_output_wm_thumbnail.mp4')
+
+        command = (
+            # Resize the thumbnail image to 540x960
+            f'ffmpeg -i "{thumbnail_filepath}" -s 540x960 "{thumbnail_resized_filepath}" -y && '
+            # Generate a loop video from the thumbnail image with a duration of 0.5s
+            f'ffmpeg -loop 1 -i "{thumbnail_resized_filepath}" -f lavfi -i '
+            f'anullsrc=channel_layout=stereo:sample_rate=44100 -c:v libx264 '
+            f'-t 0.5 -r 30 -pix_fmt yuv420p -c:a aac -shortest "{mp4_thumbnail_filepath}" -y && '
+            # Concatenate the thumbnail loop video with the watermarked video
+            f'ffmpeg -i "{mp4_thumbnail_filepath}" -i "{mp4_filepath}" -filter_complex '
+            f'"[0:v][0:a][1:v][1:a]concat=n=2:v=1:a=1" -c:v libx264 -preset veryfast '
+            f'-crf 23 -c:a aac -b:a 128k "{mp4_output_wm_cover_filepath}" -y && '
+            # Delete temporary files
+            f'del "{thumbnail_filepath}" '
+            f'"{thumbnail_resized_filepath}" '
+            f'"{mp4_thumbnail_filepath}" && '
+            f'rmdir /q "{self.temp_dir}"'
+        )
+        # print(command)
+        # Run the command
+        self.run_command(command)
+        return mp4_output_wm_cover_filepath
