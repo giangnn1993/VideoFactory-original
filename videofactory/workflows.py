@@ -367,10 +367,6 @@ class WorkflowManager:
 
         return output_dir
 
-
-
-        return csv_dir
-    
     def generate_images_from_csv(self, csv_dir):
         # Convert csv_dir to a Path object
         csv_dir = Path(csv_dir)
