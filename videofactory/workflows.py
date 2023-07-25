@@ -432,10 +432,87 @@ class WorkflowManager:
 
         # region Step 2: GENERATE D-ID VIDEO
         # ------------------------------------
-        if (tts_file):
-            output_path = image_file.with_stem(image_file.stem + '_d_id.mp4')
-            keys = os.environ.get('D-ID_BASIC_TOKENS')
-            self.video_generator.rotate_key(keys=keys)
-            id = self.video_generator.create_talk_video(image=image_file, audio=tts_file)
-            self.video_generator.get_talk(id=id, output_path=output_path)
+        d_id_file = Path(output_dir / (image_file.stem + '_d_id.mp4'))
+
+        if tts_file:
+            if not d_id_file.exists():
+                keys = os.environ.get('D-ID_BASIC_TOKENS')
+                self.video_generator.rotate_key(keys=keys)
+                id = self.video_generator.create_talk_video(image=str(image_file), audio=str(tts_file))
+                self.video_generator.get_talk(id=id, output_path=d_id_file)
+            else:
+                print(f'{d_id_file} already exists. Skipping...')
+        else:
+            print(f"{tts_file} doesn't exists. Exiting...")
+            return
+        # endregion
+
+        # region Step 3: REMOVE D-ID WATERMARK
+        # ------------------------------------
+        if d_id_file.exists():
+            self.video_editor.input_video = str(d_id_file)
+            no_watermark_file = Path(self.video_editor.remove_d_id_watermark(
+                                                input_image=str(image_file)))
+        else:
+            print(f"{d_id_file} doesn't exists. Exiting...")
+            return
+        # endregion
+
+        # region Step 4: ADD SUBTITLE
+        # ------------------------------------
+        subtitled_file = Path(output_dir / (image_file.stem + '_no_watermark_subtitled.mp4'))
+
+        if no_watermark_file.exists():
+            if not subtitled_file.exists():
+                subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
+                modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
+                subtitled_file = Path(self.subtitle_generator.burn_subtitle(
+                                    input_video=no_watermark_file,
+                                    subtitle_file=modified_subtitle_file))
+            else:
+                print(f'{subtitled_file} already exists. Skipping...')
+        else:
+            print("Video with watermark removed doesn't exists. Exiting...")
+            return
+        # endregion
+
+        # region Step 5: EDIT
+        # ------------------------------------
+        if subtitled_file.exists():
+            # Add music
+            self.video_editor.input_video = subtitled_file
+            merged_video = Path(self.video_editor.merge_audio_files_with_fading_effects())
+
+            # Add watermark text
+            if merged_video.exists():
+                self.video_editor.input_video = merged_video
+                self.video_editor.add_watermark_text()
+            else:
+                print("Video with added music doesn't exists. Exiting...")
+                return
+        else:
+            print("Video with added subtitle doesn't exists. Exiting...")
+            return
+        # endregion
+
+        # region Step 6: Add thumbnail
+        # ------------------------------------
+        if no_watermark_file.exists():
+            first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_file)
+            thumbnail_image = Path(self.thumbnail_generator.generate_thumbnail_image(
+                input_filename=first_frame.name.split('_')[0],
+                input_image_path=first_frame,
+                text=thumbnail_line))
+            if thumbnail_image.exists():
+                thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
+                                                    thumbnail_image_name=thumbnail_image.name))
+                if thumbnail_video.exists():
+                    print(f'Final video with thumbnail saved to "{thumbnail_video}"')
+                    print()
+            else:
+                print("Thumbnail image doesn't exists. Exiting...")
+                return
+        else:
+            print("Video with watermark removed doesn't exists. Exiting...")
+            return
         # endregion
