@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 import pandas as pd
+import shutil
 
 from .generators.text_generator import TextGenerator
 from .generators.image_generator import ImageGenerator
@@ -507,7 +508,9 @@ class WorkflowManager:
                 thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
                                                     thumbnail_image_name=thumbnail_image.name))
                 if thumbnail_video.exists():
-                    print(f'Final video with thumbnail saved to "{thumbnail_video}"')
+                    final_video_path = image_file.parent / thumbnail_video.name
+                    shutil.copy(thumbnail_video, final_video_path)
+                    print(f'Final video with thumbnail saved to "{final_video_path}"')
                     print()
             else:
                 print("Thumbnail image doesn't exists. Exiting...")
