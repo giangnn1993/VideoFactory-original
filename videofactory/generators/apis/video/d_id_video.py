@@ -36,7 +36,6 @@ class DidVideo(VideoGenerator):
                 with open(output_path, 'wb') as file_handle:
                     file_handle.write(r.content)
                     print(f'Downloaded successfully: {output_path}')
-                    print()
             else:
                 print("Status is not 'done'")
                 raise requests.RequestException("Status is not 'done'")
