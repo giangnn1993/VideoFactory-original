@@ -69,6 +69,10 @@ def main():
     selected_option = int(input("Enter the number of the workflow option you want to execute: "))
 
     if selected_option == 1:
+        print()
+        print("\033[1;33m(Selected) 1. Generate single talking head video\033[0m")
+        print('----------------------------------')
+        print()
         generate_single_talking_head_video(workflow_manager)
     elif selected_option == 2:
         print()
