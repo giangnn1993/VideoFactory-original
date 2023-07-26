@@ -83,6 +83,26 @@ def batch_generate_talking_head_videos(workflow_manager: WorkflowManager):
     # endregion
 
 
+def generate_single_talking_head_conversation_video(workflow_manager: WorkflowManager):
+    # Call methods to generate talking head video
+    # Prompt User Inputs for Workflow Options
+    while True:
+        text_file = Path(input('Enter the path to the text file to generate TTS from: ').strip('"'))
+        if text_file.exists() and text_file.is_file():
+            break
+        else:
+            print("Invalid file path. Please enter a valid path to the text file.")
+
+    while True:
+        image_dir = Path(input('Enter the path to the image directory: ').strip('"'))
+        if image_dir.exists() and image_dir.is_dir():
+            break
+        else:
+            print("Invalid directory path. Please enter a valid path to the image directory.")
+
+    workflow_manager.generate_talking_head_conversation_video(text_file, image_dir)
+
+
 def main():
     print("Welcome to VideoFactory!")
 
@@ -90,10 +110,20 @@ def main():
         print("Choose a workflow option:")
         print("1. Generate single talking head video")
         print("2. Batch generate talking head videos")
-        print("3. Exit")
+        print("3. Generate single talking head conversation video")
+        print("4. Exit")
         print()
 
-        selected_option = int(input("Enter the number of the workflow option you want to execute: "))
+        while True:
+            try:
+                selected_option = int(input("Enter the number of the workflow option you want to execute: "))
+                if 1 <= selected_option <= 4:
+                    break
+                else:
+                    print("Invalid input. Please enter a number between 1 and 4.")
+                break
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
 
         # Create an instance of WorkflowManager
         workflow_manager = WorkflowManager()
@@ -111,6 +141,12 @@ def main():
             print('----------------------------------')
             print()
             batch_generate_talking_head_videos(workflow_manager)
+        elif selected_option == 3:
+            print()
+            print("\033[1;33m(Selected) 2. Generate single talking head conversation video\033[0m")
+            print('----------------------------------')
+            print()
+            generate_single_talking_head_conversation_video(workflow_manager)
         elif selected_option == 3:
             print("Exiting VideoFactory. Goodbye!")
             break

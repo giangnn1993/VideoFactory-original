@@ -506,7 +506,7 @@ class WorkflowManager:
             return
         # endregion
 
-        # region Step 6: Add thumbnail
+        # region Step 6: ADD THUMBNAIL
         # ------------------------------------
         if no_watermark_file.exists():
             first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_file)
@@ -519,7 +519,7 @@ class WorkflowManager:
                 thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
                                                     thumbnail_image_name=thumbnail_image.name))
                 if thumbnail_video.exists():
-                    final_video = Path(script_folder.parent / (image_file.stem + '.mp4'))
+                    final_video = Path(script_folder.parent / (f'{image_file.stem}.mp4'))
                     shutil.copy(thumbnail_video, final_video)
                     print(f'\033[92mFinal video with thumbnail saved to "{final_video}"\033[0m')
                     print()
@@ -528,5 +528,167 @@ class WorkflowManager:
                 return
         else:
             print("Video with watermark removed doesn't exists. Exiting...")
+            return
+        # endregion
+
+    def generate_talking_head_conversation_video(self, input_file: Path, image_dir: Path):
+        # region Step 1: VALIDATE
+        # ------------------------------------
+        conversation_lines_list = read_lines(input_file)
+
+        unique_speakers = set()  # Set to store unique speakers
+        speakers_list = []  # List to store the speakers for later use
+        for conversation_line in conversation_lines_list:
+            speaker, _, _ = process_text(conversation_line)
+            unique_speakers.add(speaker)  # Add the speaker to the set of unique speakers
+            speakers_list.append(speaker)  # Save the speaker to the speakers_list
+
+        # Convert the set of unique speakers back to a list
+        unique_speakers_list = list(unique_speakers)
+
+        # Check if image_dir contains all items in unique_speakers_list along with the ".png" extension
+        for speaker in unique_speakers_list:
+            image_file = image_dir / (f'{speaker}.png')
+            if not image_file.exists():
+                print(f'"{speaker}.png" not found. Exiting...')
+                return
+
+        conversation_dir = Path(input_file.parent / input_file.stem)
+        conversation_dir.mkdir(exist_ok=True)
+        # endregion
+
+        # region Step 2: GENERATE
+        # ------------------------------------
+        # Generate audios
+        max_line_number = len(str(len(conversation_lines_list)))
+        subtitled_videos = []  # For later use
+        for i, conversation_line in enumerate(conversation_lines_list, start=1):
+            speaker, line, _ = process_text(conversation_line)
+            script_folder = Path(create_script_folder(
+                                text=conversation_line,
+                                parent_dir=conversation_dir,
+                                folder_name=str(i).zfill(max_line_number)))
+            audio_files = []
+            self.tts_generator.set_tts_provider(os.environ.get('TTS_PROVIDER'))
+            script_file = script_folder / 'script.txt'
+            tts_file = None
+
+            if script_file.exists():
+                audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
+                if not audio_file.exists():
+                    print(f'Generating audio... {[speaker]} {line}')
+                    audio_files = self.tts_generator.generate_audios_from_txt(
+                                                                        input_file=script_file,
+                                                                        output_dir=script_folder)
+                    self.audio_editor.input_audio_files = audio_files
+                    tts_file = self.audio_editor.merge_audios_with_padding(
+                                                    output_dir=conversation_dir,
+                                                    name=script_folder.name)
+                else:
+                    print(f'"{audio_file}" already exists. Skipping...')
+                    tts_file = audio_file
+
+            # Generate D-ID videos
+            d_id_video = Path(conversation_dir / (script_folder.name + '_d_id.mp4'))
+
+            if tts_file:
+                if not d_id_video.exists():
+                    image_file = image_dir / (f'{speakers_list[i-1]}.png')
+                    print('Generating D-ID video...')
+                    keys = os.environ.get('D-ID_BASIC_TOKENS')
+                    self.video_generator.rotate_key(keys=keys)
+                    id = self.video_generator.create_talk_video(image=str(image_file), audio=str(tts_file))
+                    self.video_generator.get_talk(id=id, output_path=d_id_video)
+                else:
+                    print(f'"{d_id_video}" already exists. Skipping...')
+            else:
+                print(f'"{tts_file}" doesn\'t exists. Exiting...')
+                return
+
+            # Remove D-ID watermarks
+            if d_id_video.exists():
+                no_watermark_file = Path(conversation_dir / (script_folder.name + '_no_watermark.mp4'))
+                if not no_watermark_file.exists():
+                    print('Removing watermark in D-ID video...')
+                    self.video_editor.input_video = str(d_id_video)
+                    no_watermark_file = Path(self.video_editor.remove_d_id_watermark(
+                                                    input_image=str(image_file)))
+                else:
+                    print(f'"{no_watermark_file}" already exists. Skipping...')
+            else:
+                print(f'"{d_id_video}" doesn\'t exists. Exiting...')
+                return
+
+            # Add subtitles
+            subtitled_video = Path(conversation_dir / (script_folder.name + '_no_watermark_subtitled.mp4'))
+            if no_watermark_file.exists():
+                if not subtitled_video.exists():
+                    print('Generating subtitle...')
+                    subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
+                    modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
+                    subtitled_video = Path(self.subtitle_generator.burn_subtitle(
+                                        input_video=no_watermark_file,
+                                        subtitle_file=modified_subtitle_file))
+                else:
+                    print(f'"{subtitled_video}" already exists. Skipping...')
+            else:
+                print("Video with watermark removed doesn't exists. Exiting...")
+                return
+
+            if subtitled_video.is_file():
+                subtitled_videos.append(subtitled_video)
+        # endregion
+
+        # region Step 3: EDIT
+        # ------------------------------------
+        # Join subtitled videos
+        if len(conversation_lines_list) == len(subtitled_videos):
+            joined_video = conversation_dir / f"{script_folder.name}_joined.mp4"
+            self.video_editor.join_videos(input_videos=subtitled_videos, output_filepath=joined_video)
+
+            if joined_video.exists():
+                # Add music
+                print('Adding music...')
+                self.video_editor.input_video = joined_video
+                merged_video = Path(self.video_editor.merge_audio_files_with_fading_effects(
+                                    basename=input_file.stem))
+
+                # Add watermark text
+                print('Adding watermark text...')
+                if merged_video.exists():
+                    self.video_editor.input_video = merged_video
+                    self.video_editor.add_watermark_text(basename=input_file.stem)
+                else:
+                    print("Video with added music doesn't exists. Exiting...")
+                    return
+            else:
+                print("Joined video doesn't exists. Exiting...")
+                return
+        else:
+            print("Number of lines doesn't match number of subtitled videos. Exiting...")
+            return
+
+        # Add thumbnail
+        first_no_watermark_file = Path(conversation_dir / (f'{str(1).zfill(max_line_number)}_no_watermark.mp4'))
+        if first_no_watermark_file.exists():
+            first_frame = self.thumbnail_generator.extract_first_frame(video_file=first_no_watermark_file)
+            thumbnail_image = Path(self.thumbnail_generator.generate_thumbnail_image(
+                input_filename=input_file.stem,
+                input_image_path=first_frame,
+                text=input_file.stem))
+            if thumbnail_image.exists():
+                print('Generating video with thumbnail...')
+                thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
+                                                    thumbnail_image_name=thumbnail_image.name))
+                if thumbnail_video.exists():
+                    final_video = Path(conversation_dir.parent / (f'{input_file.stem}.mp4'))
+                    shutil.copy(thumbnail_video, final_video)
+                    print(f'\033[92mFinal video with thumbnail saved to "{final_video}"\033[0m')
+                    print()
+            else:
+                print("Thumbnail image doesn't exists. Exiting...")
+                return
+        else:
+            print("First video with watermark removed doesn't exists. Exiting...")
             return
         # endregion
