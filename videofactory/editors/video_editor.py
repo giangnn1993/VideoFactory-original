@@ -232,3 +232,29 @@ class VideoEditor:
         self.run_command(cmd_add_watermark_text)
 
         return mp4_output_wm_filepath
+
+    def join_videos(self, input_videos, output_filepath=None):
+        # Create a string of input options for FFmpeg
+        input_options = ""
+        for input_video in input_videos:
+            input_options += f'-i "{input_video}" '
+
+        # Construct the FFmpeg command to join the videos
+        filter_complex = ""
+        stream_concatenation = ""
+
+        for i in range(len(input_videos)):
+            filter_complex += f"[{i}:v:0]setsar=1[sar{i}];"
+            stream_concatenation += f"[sar{i}][{i}:a:0]"
+
+        command = (
+            f'ffmpeg {input_options}-filter_complex '
+            f'"{filter_complex}{stream_concatenation}concat=n={len(input_videos)}:v=1:a=1[outv][outa]" '
+            f'-map "[outv]" -map "[outa]" \"{output_filepath}\" -y'
+        )
+
+        # Execute the FFmpeg command using os.system
+        # print(command)
+        self.run_command(command)
+
+        return output_filepath
