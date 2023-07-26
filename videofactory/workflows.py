@@ -621,11 +621,15 @@ class WorkflowManager:
 
             # Add subtitles
             subtitled_video = Path(conversation_dir / (script_folder.name + '_no_watermark_subtitled.mp4'))
+            subtitle_file = Path(conversation_dir / (script_folder.name + '_no_watermark.ass'))
+            modified_subtitle_file = Path(conversation_dir / (script_folder.name + '_no_watermark_modified.ass'))
             if no_watermark_file.exists():
                 if not subtitled_video.exists():
-                    print('Generating subtitle...')
-                    subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
-                    modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
+                    if not subtitle_file.exists():
+                        print('Generating subtitle...')
+                        subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
+                    if not modified_subtitle_file.exists():
+                        modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
                     subtitled_video = Path(self.subtitle_generator.burn_subtitle(
                                         input_video=no_watermark_file,
                                         subtitle_file=modified_subtitle_file))
