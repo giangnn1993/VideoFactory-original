@@ -734,25 +734,28 @@ class WorkflowManager:
             # Process all mp4 and mov files in the directory
             for video_file in videos_dir.glob('*.[Mm][Pp][4Oo]'):
 
-                with temp_working_directory(working_directory):
-                    # Call the enhanced_video_with_ai function (decorated with delay_decorator)
-                    output_path = enhance_video_with_ai(input_video=video_file, encoder=encoder)
-
                 # Split the filename by '_' and take the first part
                 basename = video_file.stem.split('_')[0]
-                output_h264_path = output_path.parent / f'{basename}.mp4'
-                if output_path.is_file() and not output_h264_path.is_file():
-                    print(f'Converting the video to H.264 codec... "{output_h264_path}"')
-                    cmd_h264 = f'ffmpeg -i "{output_path}" -c:v libx264 -crf 23 -c:a aac -b:a 128k "{output_h264_path}"'
+                output_h264_path = videos_dir / 'enhanced' / f'{basename}.mp4'
 
-                    # Run the ffmpeg command and suppress output
-                    subprocess.run(cmd_h264, shell=True, check=True,
-                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if not output_h264_path.is_file():
+                    with temp_working_directory(working_directory):
+                        # Call the enhanced_video_with_ai function (decorated with delay_decorator)
+                        output_path = enhance_video_with_ai(input_video=video_file, encoder=encoder)
 
-                    # Delete the original enhanced video file (output_path)
-                    os.remove(output_path)
+                    if output_path.is_file():
+                        print(f'Converting the video to H.264 codec... "{output_h264_path}"')
+                        cmd_h264 = f'ffmpeg -i "{output_path}" -c:v libx264 -crf 23 -c:a aac -b:a 128k "{output_h264_path}"'  # noqa
+                        # Run the ffmpeg command and suppress output
+                        subprocess.run(cmd_h264, shell=True, check=True,
+                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-                    print('\033[92m' + f'Final enhanced video saved to "{output_h264_path}"' + '\033[0m')
+                        # Delete the original enhanced video file (output_path)
+                        os.remove(output_path)
+
+                        print('\033[92m' + f'Final enhanced video saved to "{output_h264_path}"' + '\033[0m')
+                else:
+                    print(f'{output_h264_path} already exists. Skipping...')
 
         except subprocess.CalledProcessError as e:
             print("Command failed:", e)

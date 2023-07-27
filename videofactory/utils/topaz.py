@@ -38,7 +38,7 @@ def _enhance_video_with_ai(input_video: Path, output_path: Path = None, vram: fl
         if encoder == 'prores':  # ProRes 422 LT
             output_filename = basename + '_prores.mov'
         elif encoder == 'vp9':  # VP9 Best
-            output_filename = basename + '.mp4'
+            output_filename = basename + '_vp9.mp4'
         else:
             raise ValueError(f"Unsupported encoder: {encoder}")
         # Form the full output path by joining the output filename with the parent directory of the input video
@@ -46,7 +46,7 @@ def _enhance_video_with_ai(input_video: Path, output_path: Path = None, vram: fl
         output_dir.mkdir(exist_ok=True)
         output_path = output_dir / output_filename
 
-    if not output_path.exists():
+    if not output_path.is_file():
         if encoder == 'prores':  # ProRes 422 LT
             cmd_topaz = (
                 f'ffmpeg "-hide_banner" "-nostdin" "-y" "-nostats" "-i" "{str(input_video)}" "-sws_flags" "spline+accurate_rnd+full_chroma_int" '
