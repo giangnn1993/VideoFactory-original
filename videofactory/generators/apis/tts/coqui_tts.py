@@ -45,8 +45,14 @@ class CoquiTTS(TextToSpeech):
 
         # Get the response data
         data = response.json()
-        audio_url = data['audio_url']
-        r = requests.get(audio_url)
+
+        try:
+            audio_url = data['audio_url']
+            r = requests.get(audio_url)
+        except (KeyError, requests.exceptions.RequestException) as e:
+            print("Error occurred while accessing the audio data:")
+            print(e)
+            print("Data:", data)
 
         if response.status_code == 201:
             # Save the response to a file
