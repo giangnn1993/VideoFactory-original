@@ -88,19 +88,32 @@ def generate_single_talking_head_conversation_video(workflow_manager: WorkflowMa
     # Prompt User Inputs for Workflow Options
     while True:
         text_file = Path(input('Enter the path to the text file to generate TTS from: ').strip('"'))
-        if text_file.exists() and text_file.is_file():
+        if text_file.is_file():
             break
         else:
             print("Invalid file path. Please enter a valid path to the text file.")
 
     while True:
-        image_dir = Path(input('Enter the path to the image directory: ').strip('"'))
-        if image_dir.exists() and image_dir.is_dir():
+        images_dir = Path(input('Enter the path to the images directory: ').strip('"'))
+        if images_dir.is_dir():
             break
         else:
-            print("Invalid directory path. Please enter a valid path to the image directory.")
+            print("Invalid directory path. Please enter a valid path to the images directory.")
 
-    workflow_manager.generate_talking_head_conversation_video(text_file, image_dir)
+    workflow_manager.generate_talking_head_conversation_video(text_file, images_dir)
+
+
+def enhance_videos_with_ai(workflow_manager: WorkflowManager):
+    # Call methods to generate talking head video
+    # Prompt User Inputs for Workflow Options
+    while True:
+        videos_dir = Path(input('Enter the path to the videos directory: ').strip('"'))
+        if videos_dir.is_dir():
+            break
+        else:
+            print("Invalid directory path. Please enter a valid path to the videos directory.")
+
+    workflow_manager.enhance_videos_with_ai(videos_dir)
 
 
 def main():
@@ -111,7 +124,8 @@ def main():
         print("1. Generate single talking head video")
         print("2. Batch generate talking head videos")
         print("3. Generate single talking head conversation video")
-        print("4. Exit")
+        print("4. Enhance videos with AI")
+        print("5. Exit")
         print()
 
         while True:
@@ -147,7 +161,13 @@ def main():
             print('----------------------------------')
             print()
             generate_single_talking_head_conversation_video(workflow_manager)
-        elif selected_option == 3:
+        elif selected_option == 4:
+            print()
+            print("\033[1;33m(Selected) 4. Enhance videos with AI\033[0m")
+            print('----------------------------------')
+            print()
+            enhance_videos_with_ai(workflow_manager)
+        elif selected_option == 5:
             print("Exiting VideoFactory. Goodbye!")
             break
         else:
