@@ -534,6 +534,31 @@ class WorkflowManager:
             return
         # endregion
 
+    def generate_multiple_talking_head_videos(self, input_dir: Path):
+        lines_file = input_dir / "lines.txt"
+        thumbnail_lines_file = input_dir / "thumbnail_lines.txt"
+
+        # if self.check_talking_head_videos_resources(lines_file, thumbnail_lines_file, input_dir):
+        lines_list = read_lines(lines_file)
+        thumbnail_lines_list = read_lines(thumbnail_lines_file)
+
+        lines_first_parts = [process_text(line)[0] for line in lines_list]
+        thumbnail_first_parts = [process_text(thumbnail_line)[0] for thumbnail_line in thumbnail_lines_list]
+
+        for line, thumbnail_line, line_first_part, thumbnail_first_part in zip(
+            lines_list,
+            thumbnail_lines_list,
+            lines_first_parts,
+            thumbnail_first_parts
+        ):
+            thumbnail_line_outside_text = process_text(thumbnail_line)[1]
+            png_file = Path(input_dir / f"{line_first_part}.png")
+
+            if line_first_part == thumbnail_first_part and png_file.is_file():
+                self.generate_talking_head_video(line=line,
+                                                 thumbnail_line=thumbnail_line_outside_text,
+                                                 image_file=png_file)
+
     def generate_talking_head_conversation_video(self, input_file: Path, images_dir: Path):
         # region Step 1: VALIDATE
         # ------------------------------------
