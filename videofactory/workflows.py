@@ -1,7 +1,8 @@
 import os
+import shutil
+import subprocess
 from pathlib import Path
 import pandas as pd
-import shutil
 
 from .generators.text_generator import TextGenerator
 from .generators.image_generator import ImageGenerator
@@ -24,6 +25,8 @@ from ._utils import (
 
 from .editors.video_editor import VideoEditor
 from .editors.audio_editor import AudioEditor
+
+from .utils.topaz import temp_working_directory, delay_decorator, enhance_video_with_ai
 
 
 class WorkflowManager:
@@ -531,7 +534,7 @@ class WorkflowManager:
             return
         # endregion
 
-    def generate_talking_head_conversation_video(self, input_file: Path, image_dir: Path):
+    def generate_talking_head_conversation_video(self, input_file: Path, images_dir: Path):
         # region Step 1: VALIDATE
         # ------------------------------------
         conversation_lines_list = read_lines(input_file)
@@ -548,7 +551,7 @@ class WorkflowManager:
 
         # Check if image_dir contains all items in unique_speakers_list along with the ".png" extension
         for speaker in unique_speakers_list:
-            image_file = image_dir / (f'{speaker}.png')
+            image_file = images_dir / (f'{speaker}.png')
             if not image_file.exists():
                 print(f'"{speaker}.png" not found. Exiting...')
                 return
@@ -593,7 +596,7 @@ class WorkflowManager:
 
             if tts_file:
                 if not d_id_video.exists():
-                    image_file = image_dir / (f'{speakers_list[i-1]}.png')
+                    image_file = images_dir / (f'{speakers_list[i-1]}.png')
                     print('Generating D-ID video...')
                     keys = os.environ.get('D-ID_BASIC_TOKENS')
                     self.video_generator.rotate_key(keys=keys)
@@ -696,3 +699,20 @@ class WorkflowManager:
             print("First video with watermark removed doesn't exists. Exiting...")
             return
         # endregion
+
+    @staticmethod
+    @delay_decorator(i=4, seconds=600)
+    def enhance_videos_with_ai(videos_dir: Path):
+        # Set the working directory from the environment variable
+        working_directory = os.getenv('TVAI_WORKING_DIR')
+        try:
+            # Change the working directory
+            os.chdir(working_directory)
+            # Process all mp4 and mov files in the directory
+            for video_file in videos_dir.glob('*.[Mm][Pp][4Oo]'):
+                # Call the enhance_video_with_ai function
+                with temp_working_directory(working_directory):
+                    enhance_video_with_ai(input_video=video_file)
+        except subprocess.CalledProcessError as e:
+            print("Command failed:", e)
+        print(os.getcwd())
