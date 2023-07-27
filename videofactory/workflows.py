@@ -715,4 +715,3 @@ class WorkflowManager:
                     enhance_video_with_ai(input_video=video_file)
         except subprocess.CalledProcessError as e:
             print("Command failed:", e)
-        print(os.getcwd())
