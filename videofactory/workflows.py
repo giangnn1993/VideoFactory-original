@@ -713,12 +713,6 @@ class WorkflowManager:
                     # Call the enhanced_video_with_ai function (decorated with delay_decorator)
                     output_path = enhance_video_with_ai(input_video=video_file, encoder=encoder)
 
-                # Check if the function carries the decorator
-                if hasattr(enhance_video_with_ai, '__wrapped__'):
-                    print("enhance_video_with_ai function is decorated.")
-                else:
-                    print("enhance_video_with_ai function is NOT decorated.")
-
                 # Split the filename by '_' and take the first part
                 basename = video_file.stem.split('_')[0]
                 output_h264_path = output_path.parent / f'{basename}.mp4'
