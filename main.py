@@ -113,7 +113,20 @@ def enhance_videos_with_ai(workflow_manager: WorkflowManager):
         else:
             print("Invalid directory path. Please enter a valid path to the videos directory.")
 
-    workflow_manager.enhance_videos_with_ai(videos_dir)
+    # Prompt for the encoder choice
+    encoder = None
+    while True:
+        encoder_choice = input("Select the encoder (p for prores, v for vp9): ").strip().lower()
+        if encoder_choice == 'p':
+            encoder = 'prores'
+            break
+        elif encoder_choice == 'v':
+            encoder = 'vp9'
+            break
+        else:
+            print("Invalid encoder choice. Please select either 'prores' or 'vp9'.")
+
+    workflow_manager.enhance_videos_with_ai(videos_dir, encoder=encoder)
 
 
 def main():
