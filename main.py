@@ -25,7 +25,7 @@ def generate_single_talking_head_video(workflow_manager: WorkflowManager):
             print("Invalid input. Please enter the text to generate thumbnail from.")
 
     while True:
-        image_file = Path(input('Enter the path to the image: '))
+        image_file = Path(input('Enter the path to the image: ').strip('"'))
         if image_file.exists() and image_file.is_file():
             break
         else:

@@ -108,13 +108,13 @@ class WorkflowManager:
                 script_file = script_folder / 'script.txt'
 
                 # Check if the script file exists
-                if script_file.exists():
+                if script_file.is_file():
                     # Create a Path object for the audio file with the same
                     # name as the'script_folder' but with the extension '.wav'
                     audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
 
                     # Check if the audio file does not exist
-                    if not audio_file.exists():
+                    if not audio_file.is_file():
                         audio_files = self.tts_generator.generate_audios_from_txt(
                                                                     input_file=script_file,
                                                                     output_dir=script_folder)
@@ -222,7 +222,7 @@ class WorkflowManager:
         for thumbnail_line in thumbnail_lines:
             first_part, outside_text, _ = process_text(thumbnail_line)
             no_watermark_mp4_file = videos_dir / f'{first_part}_no_watermark.mp4'
-            if Path(no_watermark_mp4_file).exists():
+            if Path(no_watermark_mp4_file).is_file():
                 first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_mp4_file)
                 self.thumbnail_generator.generate_thumbnail_image(
                     input_filename=first_frame.name.split('_')[0],
@@ -423,9 +423,9 @@ class WorkflowManager:
         # output_dir = script_folder.parent
         tts_file = None
 
-        if script_file.exists():
+        if script_file.is_file():
             audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
-            if not audio_file.exists():
+            if not audio_file.is_file():
                 print(f'Generating audio... ({line})')
                 audio_files = self.tts_generator.generate_audios_from_txt(
                                                                     input_file=script_file,
@@ -443,8 +443,8 @@ class WorkflowManager:
         # ------------------------------------
         d_id_video = Path(script_folder / (image_file.stem + '_d_id.mp4'))
 
-        if tts_file:
-            if not d_id_video.exists():
+        if tts_file.is_file():
+            if not d_id_video.is_file():
                 print('Generating D-ID video...')
                 keys = os.environ.get('D-ID_BASIC_TOKENS')
                 self.video_generator.rotate_key(keys=keys)
@@ -459,7 +459,7 @@ class WorkflowManager:
 
         # region Step 3: REMOVE D-ID WATERMARK
         # ------------------------------------
-        if d_id_video.exists():
+        if d_id_video.is_file():
             print('Removing watermark in D-ID video...')
             self.video_editor.input_video = str(d_id_video)
             no_watermark_file = Path(self.video_editor.remove_d_id_watermark(
@@ -473,8 +473,8 @@ class WorkflowManager:
         # ------------------------------------
         subtitled_video = Path(script_folder / (image_file.stem + '_no_watermark_subtitled.mp4'))
 
-        if no_watermark_file.exists():
-            if not subtitled_video.exists():
+        if no_watermark_file.is_file():
+            if not subtitled_video.is_file():
                 print('Generating subtitle...')
                 subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
                 modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
@@ -490,7 +490,7 @@ class WorkflowManager:
 
         # region Step 5: EDIT
         # ------------------------------------
-        if subtitled_video.exists():
+        if subtitled_video.is_file():
             # Add music
             print('Adding music...')
             self.video_editor.input_video = subtitled_video
@@ -498,7 +498,7 @@ class WorkflowManager:
 
             # Add watermark text
             print('Adding watermark text...')
-            if merged_video.exists():
+            if merged_video.is_file():
                 self.video_editor.input_video = merged_video
                 self.video_editor.add_watermark_text()
             else:
@@ -511,17 +511,17 @@ class WorkflowManager:
 
         # region Step 6: ADD THUMBNAIL
         # ------------------------------------
-        if no_watermark_file.exists():
+        if no_watermark_file.is_file():
             first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_file)
             thumbnail_image = Path(self.thumbnail_generator.generate_thumbnail_image(
                 input_filename=first_frame.name.split('_')[0],
                 input_image_path=first_frame,
                 text=thumbnail_line))
-            if thumbnail_image.exists():
+            if thumbnail_image.is_file():
                 print('Generating video with thumbnail...')
                 thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
                                                     thumbnail_image_name=thumbnail_image.name))
-                if thumbnail_video.exists():
+                if thumbnail_video.is_file():
                     final_video = Path(script_folder.parent / (f'{image_file.stem}.mp4'))
                     shutil.copy(thumbnail_video, final_video)
                     print(f'\033[92mFinal video with thumbnail saved to "{final_video}"\033[0m')
@@ -552,7 +552,7 @@ class WorkflowManager:
         # Check if image_dir contains all items in unique_speakers_list along with the ".png" extension
         for speaker in unique_speakers_list:
             image_file = images_dir / (f'{speaker}.png')
-            if not image_file.exists():
+            if not image_file.is_file():
                 print(f'"{speaker}.png" not found. Exiting...')
                 return
 
@@ -576,9 +576,9 @@ class WorkflowManager:
             script_file = script_folder / 'script.txt'
             tts_file = None
 
-            if script_file.exists():
+            if script_file.is_file():
                 audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
-                if not audio_file.exists():
+                if not audio_file.is_file():
                     print(f'Generating audio... {[speaker]} {line}')
                     audio_files = self.tts_generator.generate_audios_from_txt(
                                                                         input_file=script_file,
@@ -595,7 +595,7 @@ class WorkflowManager:
             d_id_video = Path(conversation_dir / (script_folder.name + '_d_id.mp4'))
 
             if tts_file:
-                if not d_id_video.exists():
+                if not d_id_video.is_file():
                     image_file = images_dir / (f'{speakers_list[i-1]}.png')
                     print('Generating D-ID video...')
                     keys = os.environ.get('D-ID_BASIC_TOKENS')
@@ -609,9 +609,9 @@ class WorkflowManager:
                 return
 
             # Remove D-ID watermarks
-            if d_id_video.exists():
+            if d_id_video.is_file():
                 no_watermark_file = Path(conversation_dir / (script_folder.name + '_no_watermark.mp4'))
-                if not no_watermark_file.exists():
+                if not no_watermark_file.is_file():
                     print('Removing watermark in D-ID video...')
                     self.video_editor.input_video = str(d_id_video)
                     no_watermark_file = Path(self.video_editor.remove_d_id_watermark(
@@ -626,12 +626,12 @@ class WorkflowManager:
             subtitled_video = Path(conversation_dir / (script_folder.name + '_no_watermark_subtitled.mp4'))
             subtitle_file = Path(conversation_dir / (script_folder.name + '_no_watermark.ass'))
             modified_subtitle_file = Path(conversation_dir / (script_folder.name + '_no_watermark_modified.ass'))
-            if no_watermark_file.exists():
-                if not subtitled_video.exists():
-                    if not subtitle_file.exists():
+            if no_watermark_file.is_file():
+                if not subtitled_video.is_file():
+                    if not subtitle_file.is_file():
                         print('Generating subtitle...')
                         subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
-                    if not modified_subtitle_file.exists():
+                    if not modified_subtitle_file.is_file():
                         modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
                     subtitled_video = Path(self.subtitle_generator.burn_subtitle(
                                         input_video=no_watermark_file,
@@ -653,7 +653,7 @@ class WorkflowManager:
             joined_video = conversation_dir / f"{script_folder.name}_joined.mp4"
             self.video_editor.join_videos(input_videos=subtitled_videos, output_filepath=joined_video)
 
-            if joined_video.exists():
+            if joined_video.is_file():
                 # Add music
                 print('Adding music...')
                 self.video_editor.input_video = joined_video
@@ -662,7 +662,7 @@ class WorkflowManager:
 
                 # Add watermark text
                 print('Adding watermark text...')
-                if merged_video.exists():
+                if merged_video.is_file():
                     self.video_editor.input_video = merged_video
                     self.video_editor.add_watermark_text(basename=input_file.stem)
                 else:
@@ -677,17 +677,17 @@ class WorkflowManager:
 
         # Add thumbnail
         first_no_watermark_file = Path(conversation_dir / (f'{str(1).zfill(max_line_number)}_no_watermark.mp4'))
-        if first_no_watermark_file.exists():
+        if first_no_watermark_file.is_file():
             first_frame = self.thumbnail_generator.extract_first_frame(video_file=first_no_watermark_file)
             thumbnail_image = Path(self.thumbnail_generator.generate_thumbnail_image(
                 input_filename=input_file.stem,
                 input_image_path=first_frame,
                 text=input_file.stem))
-            if thumbnail_image.exists():
+            if thumbnail_image.is_file():
                 print('Generating video with thumbnail...')
                 thumbnail_video = Path(self.thumbnail_generator.generate_thumbnail_video(
                                                     thumbnail_image_name=thumbnail_image.name))
-                if thumbnail_video.exists():
+                if thumbnail_video.is_file():
                     final_video = Path(conversation_dir.parent / (f'{input_file.stem}.mp4'))
                     shutil.copy(thumbnail_video, final_video)
                     print(f'\033[92mFinal video with thumbnail saved to "{final_video}"\033[0m')
