@@ -47,7 +47,7 @@ def generate_multiple_talking_head_videos(workflow_manager: WorkflowManager):
     workflow_manager.generate_multiple_talking_head_videos(input_dir)
 
 
-def batch_generate_talking_head_videos(workflow_manager: WorkflowManager):
+def _batch_generate_talking_head_videos(workflow_manager: WorkflowManager):
     # Call methods to batch generate talking head videos
     # Prompt User Inputs for Workflow Options
     generate_quotes = input('Do you want to generate quotes? (y/n): ').lower() == 'y'
@@ -67,7 +67,7 @@ def batch_generate_talking_head_videos(workflow_manager: WorkflowManager):
         if not generate_quotes:
             quotes_file_path = Path(input('Enter the path to the quotes file to generate images from: '))
         csv_dir = workflow_manager.generate_image_prompts_from_txt(input_file=quotes_file_path)
-        generated_images_dir = workflow_manager.generate_images_from_csv(csv_dir)
+        generated_images_dir = workflow_manager.generate_images_from_csv(csv_dir, output_dir=quotes_file_path.parent)
     # endregion
 
     # region Step #2: GENERATE TALKING HEAD VIDEOS -> EDIT TALKING HEAD VIDEOS
@@ -94,6 +94,29 @@ def batch_generate_talking_head_videos(workflow_manager: WorkflowManager):
     if edit_talking_head_videos:
         workflow_manager.edit_talking_head_videos(thumbnail_lines_file, images_dir, output_dir)
     # endregion
+
+
+def generate_quotes_and_images(workflow_manager: WorkflowManager):
+    # Prompt User Inputs for Workflow Options
+    while True:
+        input_query = input('Enter a query to generate quotes from: ')
+        if input_query.strip():  # Check if the input is not empty or only whitespace
+            break
+        else:
+            print("Invalid input. Please enter the text to generate quotes from.")
+
+    # Step #1: GENERATE QUOTES -> GENERATE IMAGE PROMPTS -> GENERATE IMAGES
+    quotes_file_path, _ = workflow_manager.generate_quotes(input_query=input_query)
+    csv_dir = workflow_manager.generate_image_prompts_from_txt(input_file=quotes_file_path)
+    generated_images_dir = workflow_manager.generate_images_from_csv(csv_dir, output_dir=quotes_file_path.parent)
+
+    # Step #2: GENERATE TALKING HEAD VIDEOS
+    generate_videos = input('Do you want to generate talking head videos using generated lines and images? (y/n): ').lower()  # noqa
+    if generate_videos == 'y':
+        input_dir = generated_images_dir
+        workflow_manager.generate_multiple_talking_head_videos(input_dir)
+    else:
+        generate_multiple_talking_head_videos()
 
 
 def generate_single_talking_head_conversation_video(workflow_manager: WorkflowManager):
@@ -126,20 +149,20 @@ def enhance_videos_with_ai(workflow_manager: WorkflowManager):
         else:
             print("Invalid directory path. Please enter a valid path to the videos directory.")
 
-    # Prompt for the encoder choice
-    encoder = None
-    while True:
-        encoder_choice = input("Select the encoder (p for prores, v for vp9): ").strip().lower()
-        if encoder_choice == 'p':
-            encoder = 'prores'
-            break
-        elif encoder_choice == 'v':
-            encoder = 'vp9'
-            break
-        else:
-            print("Invalid encoder choice. Please select either 'prores' or 'vp9'.")
+    # # Prompt for the encoder choice
+    # encoder = None
+    # while True:
+    #     encoder_choice = input("Select the encoder (p for prores, v for vp9): ").strip().lower()
+    #     if encoder_choice == 'p':
+    #         encoder = 'prores'
+    #         break
+    #     elif encoder_choice == 'v':
+    #         encoder = 'vp9'
+    #         break
+    #     else:
+    #         print("Invalid encoder choice. Please select either 'prores' or 'vp9'.")
 
-    workflow_manager.enhance_videos_with_ai(videos_dir, encoder=encoder)
+    workflow_manager.enhance_videos_with_ai(videos_dir, encoder='prores')
 
 
 def main():
@@ -149,7 +172,7 @@ def main():
         print("Choose a workflow option:")
         print("1. Generate single talking head video")
         print("2. Generate multiple talking head videos")
-        print("3. Batch generate talking head videos")
+        print("3. Generate quotes and images")
         print("4. Generate single talking head conversation video")
         print("5. Enhance videos with AI")
         print("6. Exit")
@@ -184,10 +207,10 @@ def main():
             generate_multiple_talking_head_videos(workflow_manager)
         elif selected_option == 3:
             print()
-            print("\033[1;33m(Selected) 3. Batch generate talking head videos\033[0m")
+            print("\033[1;33m(Selected) 3. Generate quotes and images\033[0m")
             print('----------------------------------')
             print()
-            batch_generate_talking_head_videos(workflow_manager)
+            generate_quotes_and_images(workflow_manager)
         elif selected_option == 4:
             print()
             print("\033[1;33m(Selected) 4. Generate single talking head conversation video\033[0m")
