@@ -419,7 +419,7 @@ class WorkflowManager:
         if script_file.is_file():
             audio_file = Path(script_folder.parent, f'{script_folder.name}.wav')
             if not audio_file.is_file():
-                print(f'Generating audio... ({line})')
+                print(f'Generating audio... {line}')
                 audio_files = self.tts_generator.generate_audios_from_txt(
                                                                     input_file=script_file,
                                                                     output_dir=script_folder)
