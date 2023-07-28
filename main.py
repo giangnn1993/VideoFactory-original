@@ -1,3 +1,5 @@
+import os
+import re
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -165,6 +167,24 @@ def enhance_videos_with_ai(workflow_manager: WorkflowManager):
     workflow_manager.enhance_videos_with_ai(videos_dir, encoder='prores')
 
 
+def set_env_variables(input_string):
+    # Split the input string by '&' to separate individual commands
+    commands = input_string.split('&')
+
+    for command in commands:
+        # Remove leading/trailing spaces
+        command = command.strip()
+
+        # Extract variable and value from the command
+        if command.startswith("set "):
+            assignment = command[4:].split('=', 1)
+            if len(assignment) == 2:
+                var = assignment[0].strip().strip('"')
+                value = assignment[1].strip().strip('"')
+                os.environ[var] = value
+                print(f'Environment variable "{var}" set to "{value}".')
+
+
 def main():
     print("Welcome to VideoFactory!")
 
@@ -175,16 +195,17 @@ def main():
         print("3. Generate quotes and images")
         print("4. Generate single talking head conversation video")
         print("5. Enhance videos with AI")
-        print("6. Exit")
+        print("6. Set Environment Variables")
+        print("7. Exit")
         print()
 
         while True:
             try:
                 selected_option = int(input("Enter the number of the workflow option you want to execute: "))
-                if 1 <= selected_option <= 6:
+                if 1 <= selected_option <= 7:
                     break
                 else:
-                    print("Invalid input. Please enter a number between 1 and 4.")
+                    print("Invalid input. Please enter a number between 1 and 7.")
                 break
             except ValueError:
                 print("Invalid input. Please enter a valid number.")
@@ -224,6 +245,12 @@ def main():
             print()
             enhance_videos_with_ai(workflow_manager)
         elif selected_option == 6:
+            print("\033[1;33m(Selected) 6. Set Environment Variables\033[0m")
+            print('----------------------------------')
+            print()
+            user_input = input("Enter environment variable assignments: ")
+            set_env_variables(user_input)
+        elif selected_option == 7:
             print("Exiting VideoFactory. Goodbye!")
             break
         else:
