@@ -23,10 +23,16 @@ class FptTTS(TextToSpeech):
     def generate_audio(
         self,
         text: str,
-        voice: str = 'leminh',  # Default: 'leminh' (male northern)
-        speed: float = '0',
+        voice: str = None,
+        speed: float = None,
         output_path: str = 'fpt_tts.mp3'
     ) -> None:
+        # Check if the arguments are provided, if not, fetch from environment variables or use defaults
+        if voice is None:
+            voice = os.environ.get('FPT_VOICE', 'leminh'),  # Default: 'leminh' (male northern)
+        if speed is None:
+            speed = float(os.environ.get('FPT_SPEED', '0'))
+
         url: str = 'https://api.fpt.ai/hmi/tts/v5'
         headers: dict = {
             'api-key': self.key,

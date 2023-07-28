@@ -26,11 +26,19 @@ class ElevenLabsTTS(TextToSpeech):
     def generate_audio(
         self,
         text: str,
-        voice_id: str = 'pNInz6obpgDQGcFmaJgB',  # Default voice: 'Adam'
-        stability: float = 0.5,
-        similarity_boost: float = 0.75,
+        voice_id: str = None,
+        stability: float = None,
+        similarity_boost: float = None,
         output_path: str = 'elevenlabs_tts.mp3'
     ) -> None:
+        # Check if the arguments are provided, if not, fetch from environment variables or use defaults
+        if voice_id is None:
+            voice_id = os.environ.get('ELEVENLABS_VOICE_ID', 'pNInz6obpgDQGcFmaJgB')  # Default voice: 'Adam'
+        if stability is None:
+            stability = float(os.environ.get('ELEVENLABS_STABILITY', 0.5))
+        if similarity_boost is None:
+            similarity_boost = float(os.environ.get('ELEVENLABS_SIMILARITY_BOOST', 0.75))
+
         url: str = self._get_url(voice_id)
         headers: dict = {
             'accept': 'audio/mpeg',

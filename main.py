@@ -1,5 +1,4 @@
 import os
-import re
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -183,6 +182,8 @@ def set_env_variables(input_string):
                 value = assignment[1].strip().strip('"')
                 os.environ[var] = value
                 print(f'Environment variable "{var}" set to "{value}".')
+
+    print()
 
 
 def main():

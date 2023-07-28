@@ -22,11 +22,19 @@ class CoquiTTS(TextToSpeech):
     def generate_audio(
         self,
         text: str,
-        voice_id: str = '6720d486-5d43-4d92-8893-57a1b58b334d',  # Default voice: 'Dionisio Schuyler'
-        emotion: str = 'Neutral',
-        speed: float = 0.85,
+        voice_id: str = None,
+        emotion: str = None,
+        speed: float = None,
         output_path: str = 'coqui_tts.mp3'
     ) -> None:
+        # Check if the arguments are provided, if not, fetch from environment variables or use defaults
+        if voice_id is None:
+            voice_id = os.environ.get('COQUI_VOICE_ID', '6720d486-5d43-4d92-8893-57a1b58b334d'),  # Default voice: 'Dionisio Schuyler'  # noqa
+        if emotion is None:
+            emotion = os.environ.get('COQUI_VOICE_EMOTION', 'Neutral')
+        if speed is None:
+            speed = float(os.environ.get('COQUI_VOICE_SPEED', 0.85))
+
         url: str = 'https://app.coqui.ai/api/v2/samples'
         headers: dict = {
             'accept': 'application/json',
