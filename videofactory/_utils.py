@@ -1,7 +1,10 @@
 import os
+import json
+import re
+import csv
 from pathlib import Path
 from typing import List
-import json
+import pandas as pd
 
 
 def read_lines(file_path):
@@ -235,3 +238,93 @@ def parse_response_image(input_query: str, provider_name, json_data):
     except json.JSONDecodeError:
         print("Invalid JSON format: Unable to parse the provided JSON data.")
         return
+
+
+def normalize_string(input_string):
+    # Define a regex pattern to match characters that are not allowed in file/directory names
+    # This pattern replaces any characters other than letters, digits, underscores, hyphens, and dots with an underscore.  # noqa
+    # Dots are included as they are common in file extensions, but filenames cannot start with a dot.
+    # You can customize this pattern based on your specific needs.
+    pattern = r'[^\w\-.]'
+
+    # Replace characters matched by the regex pattern with an underscore
+    normalized_string = re.sub(pattern, '_', input_string)
+
+    # Remove dots at the start of the string (common for hidden files on Unix-like systems)
+    normalized_string = re.sub(r'^\.*', '', normalized_string)
+
+    return normalized_string
+
+
+def combine_csv_files(directory: Path, output_path: Path = None) -> Path:
+    csv_files = list(directory.glob("*.csv"))
+
+    if not csv_files:
+        print("No CSV files found in the directory.")
+        return
+
+    combined_data = []
+    consistent_headers = None
+
+    for csv_file in csv_files:
+        with csv_file.open('r', newline='') as file:
+            reader = csv.reader(file)
+            headers = next(reader)
+
+            # Check if headers are consistent with previous files
+            if consistent_headers is None:
+                consistent_headers = headers
+            elif consistent_headers != headers:
+                print(f"Headers in {csv_file.name} are inconsistent with previous files.")
+                return
+
+            for row in reader:
+                combined_data.append(row)
+
+    if combined_data:
+        output_path = Path(output_path or directory / 'combined_output.csv')
+
+        with output_path.open('w', newline='') as output_csv:
+            writer = csv.writer(output_csv)
+            writer.writerow(consistent_headers)  # Write the consistent headers
+            writer.writerows(combined_data)
+
+        print(f'CSV files successfully combined into "{output_path.name}"')
+    else:
+        print("No data found in the CSV files.")
+
+    return output_path
+
+
+def generate_line_files(input_csv: Path):
+    # Read the CSV file into a DataFrame
+    df = pd.read_csv(input_csv)
+
+    # Extract 'quote' and 'short' columns from the DataFrame
+    quote_lines = df['quote'].tolist()
+    short_lines = df['short'].tolist()
+
+    # Get the total number of lines
+    total_lines = max(len(quote_lines), len(short_lines))
+
+    # Generate lines.txt
+    lines_file_path = input_csv.parent / 'lines.txt'
+    with open(lines_file_path, 'w', encoding='utf-8') as lines_file:
+        for i in range(1, total_lines + 1):
+            line = f"[{str(i).zfill(len(str(total_lines)))}] {quote_lines[i-1]}"
+            if i != total_lines:
+                line += '\n'
+            lines_file.write(line)
+
+    # Generate thumbnail_lines.txt
+    thumbnail_lines_file_path = input_csv.parent / 'thumbnail_lines.txt'
+    with open(thumbnail_lines_file_path, 'w', encoding='utf-8') as thumbnail_lines_file:
+        for i in range(1, total_lines + 1):
+            line = f"[{str(i).zfill(len(str(total_lines)))}] {short_lines[i-1]}"
+            if i != total_lines:
+                line += '\n'
+            thumbnail_lines_file.write(line)
+
+    print("Files 'lines.txt' and 'thumbnail_lines.txt' generated successfully.")
+
+    return lines_file_path, thumbnail_lines_file_path
