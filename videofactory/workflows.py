@@ -20,7 +20,10 @@ from ._utils import (
     create_script_folder,
     create_script_folders,
     parse_response_quote,
-    parse_response_image
+    parse_response_image,
+    normalize_string,
+    combine_csv_files,
+    generate_line_files
 )
 
 from .editors.video_editor import VideoEditor
@@ -233,11 +236,10 @@ class WorkflowManager:
 
         # endregion
 
-    def generate_quotes(self, input_query=None):
-        if input_query is None:
-            input_query = input('Enter a query to generate quotes from: ').strip()
+    def generate_quotes(self, input_query: str = None):
+        input_query = normalize_string(input_query.strip())
 
-        # Then, call the generate_chat_responses function with a query:
+        # Call the generate_chat_responses function with a query:
         prompt = self.text_generator.create_few_shot_prompt_template(
             query=input_query,
             examples=self.text_generator.examples_quote,
@@ -246,21 +248,18 @@ class WorkflowManager:
         responses = self.text_generator.generate_chat_responses(query=prompt)
         # Iterate over the responses and print the response and provider name
         if responses is not None:
-            # Lists to capture all quote_list and short_list values
-            all_quotes = []
-            all_shorts = []
 
-            basepath = self.text_generator.processed_dir / f'{input_query}'
+            output_dir = Path(self.text_generator.processed_dir / input_query)
+            output_dir.mkdir(exist_ok=True)
+            csv_dir = Path(output_dir / 'csv')
+            csv_dir.mkdir(exist_ok=True)
+
             for response, provider_name in responses:
                 print('+-----------------------------------------------------------------------------+')
                 print(f' User: {input_query} ')
                 print(f' {provider_name}: ')
 
                 result_lists = parse_response_quote(input_query, provider_name, json_data=response)
-
-                # Append quote_list and short_list to the respective all_quotes and all_shorts lists
-                all_quotes.extend(result_lists[3])  # quote_list
-                all_shorts.extend(result_lists[4])  # short_list
 
                 df = pd.DataFrame(
                     {
@@ -272,25 +271,17 @@ class WorkflowManager:
                     }
                 )
 
+                # Add a new column "length" containing the length of the current value in the "short" column
+                df["short_length"] = df["short"].apply(len)
+
                 # Save DataFrame to a CSV file
-                csv_file_path = f'{basepath}_{provider_name}.csv'
+                csv_file_path = csv_dir / f'{input_query}_{provider_name}.csv'
                 df.to_csv(csv_file_path, index=False)
 
-            # Write all_quotes to a TXT file with zero-padded index numbers
-            quotes_file_path = f'{basepath}_quotes.txt'
-            with open(quotes_file_path, "w", encoding='utf-8') as f:
-                for i, quote in enumerate(all_quotes, start=1):
-                    # Calculate the zero-padding for the index number based on the maximum line number
-                    max_line_number = len(str(len(all_quotes)))
-                    f.write(f"[{str(i).zfill(max_line_number)}] {quote}\n")
+            output_path = Path(output_dir / f'{input_query}.csv')
+            combined_csv_path = combine_csv_files(directory=csv_dir, output_path=output_path)
 
-            # Write all_shorts to a TXT file with zero-padded index numbers
-            shorts_file_path = f'{basepath}_shorts.txt'
-            with open(shorts_file_path, "w", encoding='utf-8') as f:
-                for i, short in enumerate(all_shorts, start=1):
-                    # Calculate the zero-padding for the index number based on the maximum line number
-                    max_line_number = len(str(len(all_shorts)))
-                    f.write(f"[{str(i).zfill(max_line_number)}] {short}\n")
+            quotes_file_path, shorts_file_path = generate_line_files(input_csv=combined_csv_path)
 
             return quotes_file_path, shorts_file_path
 
@@ -298,7 +289,7 @@ class WorkflowManager:
             print('Error occurred while generating chat response')
             return
 
-    def generate_image_prompts_from_txt(self, input_file, output_dir=None):
+    def generate_image_prompts_from_txt(self, input_file: Path, output_dir: Path = None) -> Path:
         quotes_list = read_lines(input_file)
         # Calculate the zero-padding for the index number based on the maximum line number
         max_line_number = len(str(len(quotes_list)))
@@ -312,13 +303,13 @@ class WorkflowManager:
             responses = self.text_generator.generate_chat_responses(query=prompt)
 
             # Get the output directory path based on the input file name
-            output_dir = Path(self.text_generator.processed_dir / Path(input_file).stem)
+            csv_dir = Path(output_dir or self.text_generator.processed_dir / input_file.parent) / 'art_prompts'
             # Create the output directory if it doesn't exist
-            output_dir.mkdir(exist_ok=True)
+            csv_dir.mkdir(exist_ok=True)
             # Extract the first part of the quote using the process_text function
             first_part, _, _ = process_text(quote)
             # Create the base path for the prompts file within the output directory
-            basepath = output_dir / first_part
+            basepath = csv_dir / first_part
             # Generate the file path for the prompts file
             prompts_file_path = f'{basepath}_automatic1111.txt'
 
@@ -364,18 +355,19 @@ class WorkflowManager:
 
                 # return prompts_file_path
 
+                # Combine csv files in art_prompts directory
+                combined_csv_path = csv_dir.parent / 'art_prompts.csv'
+                combine_csv_files(directory=csv_dir, output_path=combined_csv_path)
+
             else:
                 print('Error occurred while generating chat response')
                 with open(prompts_file_path, "w", encoding='utf-8') as f:
                     f.write(f"[{str(i).zfill(max_line_number)}]\n")
                 # return
 
-        return output_dir
+        return Path(csv_dir)
 
-    def generate_images_from_csv(self, csv_dir):
-        # Convert csv_dir to a Path object
-        csv_dir = Path(csv_dir)
-
+    def generate_images_from_csv(self, csv_dir: Path, output_dir: Path = None) -> Path:
         # Scan csv_dir for csv files
         csv_files = csv_dir.glob('*.csv')
 
@@ -390,10 +382,11 @@ class WorkflowManager:
             # Process each row in the DataFrame
             for _, row in df.iterrows():
                 # Assign 'prompt' as a joined string of values for 4 columns: media, subject, describe, art
-                prompt = ','.join(row[['media', 'subject', 'describe', 'art']])
+                prompt = ','.join(str(item) for item in row[['media', 'subject', 'describe', 'art']])
 
+                output_dir = output_dir or csv_dir
                 # Assign 'output_path' as basename + '_' + value of column 'provider_name' + '.png'
-                output_path = csv_dir / f"{basename}_{row['provider_name']}.png"
+                output_path = output_dir / f"{basename}_{row['provider_name']}.png"
 
                 print('+-----------------------------------------------------------------------------+')
                 print(f'Generating image with prompt: {prompt}')
@@ -403,7 +396,7 @@ class WorkflowManager:
                 print(f'Image saved successfully to {output_path}')
                 print()
 
-        return csv_dir
+        return Path(output_dir)
 
     def generate_talking_head_video(self, line: str, thumbnail_line: str, image_file: Path):
 
@@ -563,12 +556,15 @@ class WorkflowManager:
             thumbnail_first_parts
         ):
             thumbnail_line_outside_text = process_text(thumbnail_line)[1]
-            png_file = Path(input_dir / f"{line_first_part}.png")
 
-            if line_first_part == thumbnail_first_part and png_file.is_file():
-                self.generate_talking_head_video(line=line,
-                                                 thumbnail_line=thumbnail_line_outside_text,
-                                                 image_file=png_file)
+            # List of PNG files that start with line_first_part and end with .png in input_dir.
+            png_files = list(input_dir.glob(f"{line_first_part}*.png"))
+
+            for png_file in png_files:
+                if line_first_part == thumbnail_first_part and png_file.is_file():
+                    self.generate_talking_head_video(line=line,
+                                                     thumbnail_line=thumbnail_line_outside_text,
+                                                     image_file=png_file)
 
     def generate_talking_head_conversation_video(self, input_file: Path, images_dir: Path):
         # region Step 1: VALIDATE
