@@ -463,11 +463,16 @@ class WorkflowManager:
 
         # region Step 3: REMOVE D-ID WATERMARK
         # ------------------------------------
+        no_watermark_video = Path(script_folder / (image_file.stem + '_no_watermark.mp4'))
+
         if d_id_video.is_file():
-            print('Removing watermark in D-ID video...')
-            self.video_editor.input_video = str(d_id_video)
-            no_watermark_file = Path(self.video_editor.remove_d_id_watermark(
-                                                input_image=str(image_file)))
+            if not no_watermark_video.is_file():
+                print('Removing watermark in D-ID video...')
+                self.video_editor.input_video = str(d_id_video)
+                no_watermark_video = Path(self.video_editor.remove_d_id_watermark(
+                                                    input_image=str(image_file)))
+            else:
+                print(f'{no_watermark_video} already exists. Skipping...')
         else:
             print(f"{d_id_video} doesn't exists. Exiting...")
             return
@@ -477,13 +482,13 @@ class WorkflowManager:
         # ------------------------------------
         subtitled_video = Path(script_folder / (image_file.stem + '_no_watermark_subtitled.mp4'))
 
-        if no_watermark_file.is_file():
+        if no_watermark_video.is_file():
             if not subtitled_video.is_file():
                 print('Generating subtitle...')
-                subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_file)
+                subtitle_file = self.subtitle_generator.generate_subtitle(input_video=no_watermark_video)
                 modified_subtitle_file = self.subtitle_generator.modify_subtitle(subtitle_file)
                 subtitled_video = Path(self.subtitle_generator.burn_subtitle(
-                                    input_video=no_watermark_file,
+                                    input_video=no_watermark_video,
                                     subtitle_file=modified_subtitle_file))
             else:
                 print(f'{subtitled_video} already exists. Skipping...')
@@ -515,8 +520,8 @@ class WorkflowManager:
 
         # region Step 6: ADD THUMBNAIL
         # ------------------------------------
-        if no_watermark_file.is_file():
-            first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_file)
+        if no_watermark_video.is_file():
+            first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_video)
             thumbnail_image = Path(self.thumbnail_generator.generate_thumbnail_image(
                 input_filename=first_frame.name.split('_')[0],
                 input_image_path=first_frame,
