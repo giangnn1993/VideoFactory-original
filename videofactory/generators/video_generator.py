@@ -122,7 +122,7 @@ class VideoGenerator:
         self.vidgen.key = current_key
 
     def rotate_key(self, keys: str,
-                   limit: int = 2,  delimiter: str = ',') -> None:
+                   limit: int = 1,  delimiter: str = ',') -> None:
         # Split the keys string into a list using the specified delimiter
         keys = keys.split(delimiter)
 

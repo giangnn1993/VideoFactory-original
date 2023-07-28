@@ -115,6 +115,8 @@ class DidVideo(VideoGenerator):
             # Load the response text into a JSON object
             json_response = json.loads(response.text)
             return json_response['id']
+        elif response.status_code == 402:
+            raise Exception("Not enough credits.")
         else:
             print("Error: POST request was not successful")
 

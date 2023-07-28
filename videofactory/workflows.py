@@ -443,12 +443,23 @@ class WorkflowManager:
         # ------------------------------------
         d_id_video = Path(script_folder / (image_file.stem + '_d_id.mp4'))
 
+        # Check if the Text-to-Speech (TTS) file exists
         if tts_file.is_file():
+            # Check if the D-ID video file does not exist
             if not d_id_video.is_file():
                 print('Generating D-ID video...')
+                # Get the D-ID Basic API tokens from environment variables
                 keys = os.environ.get('D-ID_BASIC_TOKENS')
+                # Rotate API keys to ensure a valid key is used for the video generation process
                 self.video_generator.rotate_key(keys=keys)
-                id = self.video_generator.create_talk_video(image=str(image_file), audio=str(tts_file))
+                try:
+                    # Create the D-ID talk video using the image and audio from the specified files
+                    id = self.video_generator.create_talk_video(image=str(image_file), audio=str(tts_file))
+                except Exception as e:
+                    # If an error occurs during video generation, print the error and rotate the API keys
+                    print(str(e))
+                    self.video_generator.rotate_key(keys=keys)
+                # Retrieve the generated talk video from D-ID using the generated ID and save it
                 self.video_generator.get_talk(id=id, output_path=d_id_video)
             else:
                 print(f'{d_id_video} already exists. Skipping...')
