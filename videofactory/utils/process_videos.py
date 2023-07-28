@@ -36,7 +36,7 @@ def process_files(input_dir: Path):
 
 
 def save_to_csv(file_content_map, output_csv):
-    with open(output_csv, 'w', newline='') as csv_file:
+    with open(output_csv, 'w', newline='', encoding='utf-8-sig') as csv_file:
         fieldnames = ["path", "thumbnail_line"]
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
 
