@@ -22,14 +22,22 @@ class VideoGenerator:
             raise ValueError(f'Unsupported video generator: {self.vidgen_provider}')
         return VidGenClass(key=self.key)
 
-    def create_talk_video(self, image, audio, **kwargs) -> str:
-        # Upload an image and return the URL
-        image_url = self.vidgen.upload_image(image=image)
-        # Upload an audio file and return the URL
-        audio_url = self.vidgen.upload_audio(audio=audio)
-        # Use the returned URLs to create a talking head video and return its id
-        id = self.vidgen.create_talk(image_url=image_url, audio_url=audio_url, **kwargs)
-        return id
+    def create_talk_video(self, image, audio, max_retries=3, **kwargs) -> str:
+        # Attempt to upload the image and audio multiple times (max_retries)
+        for retry in range(max_retries):
+            # Upload an image and return the URL
+            image_url = self.vidgen.upload_image(image=image)
+            # Upload an audio file and return the URL
+            audio_url = self.vidgen.upload_audio(audio=audio)
+
+            # Check if image_url and audio_url are None (uploads were unsuccessful)
+            if image_url is None or audio_url is None:
+                print(f"Upload failed for image or audio. Retry {retry+1}/{max_retries}")
+                continue  # Retry the upload
+
+            # Use the returned URLs to create a talking head video and return its id
+            video_id = self.vidgen.create_talk(image_url=image_url, audio_url=audio_url, **kwargs)
+            return video_id
 
     def get_talk(self, id: str, **kwargs):
         self.vidgen.get_talk(id=id, **kwargs)
