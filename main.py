@@ -1,3 +1,4 @@
+import argparse
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -186,35 +187,43 @@ def set_env_variables(input_string):
     print()
 
 
-def main():
+def main(selected_option=None):
+    # Create an instance of WorkflowManager
+    workflow_manager = WorkflowManager()
+
     print("Welcome to VideoFactory!")
 
     while True:
-        print("Choose a workflow option:")
-        print("1. Generate single talking head video")
-        print("2. Generate multiple talking head videos")
-        print("3. Generate quotes and images")
-        print("4. Generate single talking head conversation video")
-        print("5. Enhance videos with AI")
-        print("6. Set Environment Variables")
-        print("7. Exit")
-        print()
 
-        while True:
-            try:
-                selected_option = int(input("Enter the number of the workflow option you want to execute: "))
-                if 1 <= selected_option <= 7:
-                    break
-                else:
-                    print("Invalid input. Please enter a number between 1 and 7.")
+        if selected_option is None:
+            while True:
+                print()
+                print("Choose a workflow option:")
+                print("1. Generate single talking head video")
+                print("2. Generate multiple talking head videos")
+                print("3. Generate quotes and images")
+                print("4. Generate single talking head conversation video")
+                print("5. Enhance videos with AI")
+                print("6. Set Environment Variables")
+                print("7. Exit")
+                print()
+                while True:
+                    try:
+                        selected_option = int(input("Enter the number of the workflow option you want to execute: "))
+                        if 1 <= selected_option <= 7:
+                            break
+                        else:
+                            print("\033[91m" + "Invalid input. Please enter a number between 1 and 7." + "\033[0m")
+                    except ValueError:
+                        print("\033[91m" + "Invalid input. Please enter a valid number." + "\033[0m")
                 break
-            except ValueError:
-                print("Invalid input. Please enter a valid number.")
+        else:
+            selected_option = int(selected_option)
+            if 1 <= selected_option <= 7:
+                print()
+                break
 
-        # Create an instance of WorkflowManager
-        workflow_manager = WorkflowManager()
         # Call methods from the WorkflowManager class as needed
-
         if selected_option == 1:
             print()
             print("\033[1;33m(Selected) 1. Generate single talking head video\033[0m")
@@ -251,12 +260,19 @@ def main():
             print()
             user_input = input("Enter environment variable assignments: ")
             set_env_variables(user_input)
+            selected_option = None
         elif selected_option == 7:
             print("Exiting VideoFactory. Goodbye!")
             break
         else:
-            print("Invalid option selected. Please try again.")
+            print("\033[91m" + "Invalid option selected. Please try again." + "\033[0m")
+
+        selected_option = None  # Reset selected_option after each iteration
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="VideoFactory workflow options.")
+    parser.add_argument("--option", help="Select a workflow option (1-7).")
+    args = parser.parse_args()
+
+    main(args.option)
