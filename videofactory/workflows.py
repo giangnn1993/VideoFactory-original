@@ -520,6 +520,8 @@ class WorkflowManager:
 
         # region Step 6: ADD THUMBNAIL
         # ------------------------------------
+        thumbnail_line = process_text(thumbnail_line)[1]
+
         if no_watermark_video.is_file():
             first_frame = self.thumbnail_generator.extract_first_frame(video_file=no_watermark_video)
             thumbnail_image = Path(self.thumbnail_generator.generate_thumbnail_image(
