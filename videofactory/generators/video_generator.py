@@ -54,7 +54,8 @@ class VideoGenerator:
         if self.vidgen_provider == 'd-id':
             self.rotate_key_for_d_id(keys, limit)
         elif self.vidgen_provider == 'gen-2':
-            self.rotate_key_for_gen_2(keys, limit)
+            username, gpuCredits, gpuUsageLimit, seconds_left = self.rotate_key_for_gen_2(keys, limit)
+            return username, gpuCredits, gpuUsageLimit, seconds_left
         else:
             raise ValueError(f'Unsupported video generator: {self.vidgen_provider}')
 
@@ -196,6 +197,23 @@ class VideoGenerator:
     @_required_vidgen_provider('gen-2')
     def rotate_key_for_gen_2(self, keys, limit=4):
         self.vidgen.headers["Authorization"] = f"Bearer {self.vidgen.key}"
+        username, gpuCredits, gpuUsageLimit, seconds_left = self.get_profile()
+
+        while gpuCredits == gpuUsageLimit or (gpuCredits > 0 and seconds_left < limit):  # 1s left or seconds_left<limit
+            # Find the index of the current key
+            current_index = keys.index(self.vidgen.key)
+            # Check if not already at last key
+            if current_index < len(keys) - 1:
+                self.vidgen.key = keys[current_index + 1]
+            self.vidgen.headers["Authorization"] = f"Bearer {self.vidgen.key}"
+            username, gpuCredits, gpuUsageLimit, seconds_left = self.get_profile()
+            print('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')
+            print(f"Current token: {self.vidgen.key}")
+            print(f"Current token index: {current_index+1}/{len(keys)}")
+            print(f"REMAINING CREDITS: {gpuCredits} ({seconds_left} seconds left)")
+            print('┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛')
+
+        return username, gpuCredits, gpuUsageLimit, seconds_left
 
     @_required_vidgen_provider('gen-2')
     def get_profile(self):
@@ -204,7 +222,7 @@ class VideoGenerator:
               f"         GPU Credits: {gpuCredits}\n"
               f"         GPU Usage Limit: {gpuUsageLimit}\n"
               f"         Seconds Left: {seconds_left}s")
-        return username
+        return username, gpuCredits, gpuUsageLimit, seconds_left
 
     @_required_vidgen_provider('gen-2')
     def upload_image(self, image_path: Path):
