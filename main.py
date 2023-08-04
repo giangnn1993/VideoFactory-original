@@ -28,7 +28,7 @@ def generate_single_talking_head_video(workflow_manager: WorkflowManager):
 
     while True:
         image_file = Path(input('Enter the path to the image: ').strip('"'))
-        if image_file.exists() and image_file.is_file():
+        if image_file.is_file():
             break
         else:
             print("Invalid file path. Please enter a valid path to the image.")
@@ -187,6 +187,32 @@ def set_env_variables(input_string):
     print()
 
 
+def generate_single_ai_video_from_image(workflow_manager: WorkflowManager):
+    # Call methods to generate talking head video
+    # Prompt User Inputs for Workflow Options
+    while True:
+        image_file = Path(input('Enter the path to the image: ').strip('"'))
+        if image_file.is_file():
+            break
+        else:
+            print("Invalid file path. Please enter a valid path to the image.")
+
+    workflow_manager.generate_single_ai_video_from_image(image_file)
+
+
+def generate_multiple_ai_videos_from_images(workflow_manager: WorkflowManager):
+    # Call methods to generate talking head video
+    # Prompt User Inputs for Workflow Options
+    while True:
+        input_dir = Path(input('Enter the path to the directory containing PNG files: ').strip('"'))
+        if input_dir.is_dir():
+            break
+        else:
+            print("Invalid directory path. Please enter a valid path to the directory.")
+
+    workflow_manager.generate_multiple_ai_videos_from_images(input_dir)
+
+
 def main(selected_option=None):
     # Create an instance of WorkflowManager
     workflow_manager = WorkflowManager()
@@ -205,15 +231,17 @@ def main(selected_option=None):
                 print("4. Generate single talking head conversation video")
                 print("5. Enhance videos with AI")
                 print("6. Set Environment Variables")
-                print("7. Exit")
+                print("7. Generate single AI video from image")
+                print("8. Generate multiple AI videos from images")
+                print("9. Exit")
                 print()
                 while True:
                     try:
                         selected_option = int(input("Enter the number of the workflow option you want to execute: "))
-                        if 1 <= selected_option <= 7:
+                        if 1 <= selected_option <= 9:
                             break
                         else:
-                            print("\033[91m" + "Invalid input. Please enter a number between 1 and 7." + "\033[0m")
+                            print("\033[91m" + "Invalid input. Please enter a number between 1 and 9." + "\033[0m")
                     except ValueError:
                         print("\033[91m" + "Invalid input. Please enter a valid number." + "\033[0m")
                 break
@@ -262,6 +290,18 @@ def main(selected_option=None):
             set_env_variables(user_input)
             selected_option = None
         elif selected_option == 7:
+            print()
+            print("\033[1;33m(Selected) 7. Generate single AI video from image\033[0m")
+            print('----------------------------------')
+            print()
+            generate_single_ai_video_from_image(workflow_manager)
+        elif selected_option == 8:
+            print()
+            print("\033[1;33m(Selected) 8. Generate multiple AI videos from images\033[0m")
+            print('----------------------------------')
+            print()
+            generate_multiple_ai_videos_from_images(workflow_manager)
+        elif selected_option == 9:
             print("Exiting VideoFactory. Goodbye!")
             break
         else:

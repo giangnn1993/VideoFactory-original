@@ -3,6 +3,7 @@ import shutil
 import subprocess
 from pathlib import Path
 import pandas as pd
+from concurrent.futures import ThreadPoolExecutor
 
 from .generators.text_generator import TextGenerator
 from .generators.image_generator import ImageGenerator
@@ -37,7 +38,7 @@ class WorkflowManager:
         self.text_generator = TextGenerator('g4f')  # Initialize ImageGenerator object
         self.image_generator = ImageGenerator('automatic1111')  # Initialize ImageGenerator object
         self.tts_generator = TTSGenerator()  # Initialize TTSGenerator object
-        self.video_generator = VideoGenerator('d-id')  # Initialize VideoGenerator object
+        self.video_generator = VideoGenerator()  # Initialize VideoGenerator object
         self.subtitle_generator = SubtitleGenerator()  # Initialize SubtitleGenerator object
         self.thumbnail_generator = ThumbnailGenerator()  # Initialize ThumbnailGenerator object
 
@@ -399,6 +400,7 @@ class WorkflowManager:
         return Path(output_dir)
 
     def generate_talking_head_video(self, line: str, thumbnail_line: str, image_file: Path):
+        self.video_generator.set_vidgen_provider('d-id')
 
         # region Step 1: GENERATE AUDIO
         # ------------------------------------
@@ -455,9 +457,9 @@ class WorkflowManager:
                 # Retrieve the generated talk video from D-ID using the generated ID and save it
                 self.video_generator.get_talk(id=id, output_path=d_id_video)
             else:
-                print(f'{d_id_video} already exists. Skipping...')
+                print(f'"{d_id_video}" already exists. Skipping...')
         else:
-            print(f"{tts_file} doesn't exists. Exiting...")
+            print(f'"{tts_file}" doesn\'t exists. Exiting...')
             return
         # endregion
 
@@ -472,9 +474,9 @@ class WorkflowManager:
                 no_watermark_video = Path(self.video_editor.remove_d_id_watermark(
                                                     input_image=str(image_file)))
             else:
-                print(f'{no_watermark_video} already exists. Skipping...')
+                print(f'"{no_watermark_video}" already exists. Skipping...')
         else:
-            print(f"{d_id_video} doesn't exists. Exiting...")
+            print(f'"{d_id_video}" doesn\'t exists. Exiting...')
             return
         # endregion
 
@@ -491,7 +493,7 @@ class WorkflowManager:
                                     input_video=no_watermark_video,
                                     subtitle_file=modified_subtitle_file))
             else:
-                print(f'{subtitled_video} already exists. Skipping...')
+                print(f'"{subtitled_video}" already exists. Skipping...')
         else:
             print("Video with watermark removed doesn't exists. Exiting...")
             return
@@ -546,6 +548,8 @@ class WorkflowManager:
         # endregion
 
     def generate_multiple_talking_head_videos(self, input_dir: Path):
+        self.video_generator.set_vidgen_provider('d-id')
+
         lines_file = input_dir / "lines.txt"
         thumbnail_lines_file = input_dir / "thumbnail_lines.txt"
 
@@ -574,6 +578,8 @@ class WorkflowManager:
                                                      image_file=png_file)
 
     def generate_talking_head_conversation_video(self, input_file: Path, images_dir: Path):
+        self.video_generator.set_vidgen_provider('d-id')
+
         # region Step 1: VALIDATE
         # ------------------------------------
         conversation_lines_list = read_lines(input_file)
@@ -773,3 +779,58 @@ class WorkflowManager:
 
         except subprocess.CalledProcessError as e:
             print("Command failed:", e)
+
+    def generate_single_ai_video_from_image(self, image_file: Path):
+        self.video_generator.set_vidgen_provider('gen-2')
+
+        gen_2_video = Path(image_file.parent / (image_file.stem + '.mp4'))
+        if not gen_2_video.is_file():
+            print('Generating Gen-2 video...')
+            # Get the D-ID Basic API tokens from environment variables
+            keys = os.environ.get('GEN_2_BEARER_TOKENS')
+            # Rotate API keys to ensure a valid key is used for the video generation process
+            self.video_generator.rotate_key(keys=keys)
+
+            # Get the profile username
+            username = self.video_generator.get_profile()
+            if not username:
+                print("Username is missing or empty. Aborting...")
+                return
+            # Upload the image and get the upload URLs
+            upload_url, preview_upload_url = self.video_generator.upload_image(image_file)
+            if not upload_url:
+                print("Upload URL is missing or empty. Aborting...")
+                return
+            if not preview_upload_url:
+                print("Preview Upload URL is missing or empty. Aborting...")
+                return
+
+            # Generate the video
+            self.video_generator.generate_video_from_image(image_file, username, upload_url, preview_upload_url)
+        else:
+            print(f'"{gen_2_video}" already exists. Skipping...')
+
+    def generate_multiple_ai_videos_from_images(self, images_dir: Path):
+        self.video_generator.set_vidgen_provider('gen-2')
+
+        png_files = list(images_dir.glob("*.png"))
+        if not png_files:
+            print("No PNG files found in the folder.")
+            return
+        else:
+            while True:
+                try:
+                    num_repeats = int(input("Enter the number of times to process each image: "))
+                    break
+                except ValueError:
+                    print("Invalid input. Please enter a valid integer.")
+
+        def process_single_image(png_file):
+            with ThreadPoolExecutor() as inner_executor:
+                for repeat_index in range(1, num_repeats + 1):
+                    print(f"Repeat: {repeat_index}/{num_repeats}")
+                    inner_executor.submit(self.generate_single_ai_video_from_image, png_file)
+
+        for png_index, png_file in enumerate(png_files, start=1):
+            print(f"\nProcessing: {png_file.name} (File {png_index}/{len(png_files)})")
+            process_single_image(png_file)
