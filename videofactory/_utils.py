@@ -46,6 +46,10 @@ def process_text(text):
 
     outside_text = (text[:start_index-1] + text[end_index+1:]).strip()
 
+    # Check if square brackets are not present
+    if start_index == 0 or end_index == -1:
+        outside_text = text.strip()
+
     return first_part, outside_text, config
 
 

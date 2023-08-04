@@ -17,9 +17,9 @@ class SubtitleGenerator:
                  input_dir=None,
                  processed_dir=None):
 
-        self.prepend_string = prepend_string or os.environ.get("SUBTITLE_PREPEND_STRING", None)
-        self.style = style or os.environ.get("SUBTITLE_STYLE", "default")
         self.model = model or stable_whisper.load_model('base')
+        self.style = style
+        self.prepend_string = prepend_string
 
         # Get the project folder (VideoFactory)
         project_folder = Path(__file__).resolve().parent.parent.parent
@@ -181,6 +181,8 @@ class SubtitleGenerator:
         # output_filepath = input_video_path.parent / output_file
 
         # Load subtitle styling parameters from JSON file
+        self.prepend_string = self.prepend_string or os.environ.get("SUBTITLE_PREPEND_STRING", None)
+        self.style = self.style or os.environ.get("SUBTITLE_STYLE", "default")
         with open(self.assets_dir / 'subtitle-styles.json', 'r') as f:
             subtitle_style = json.load(f)["styles"][self.style]
             gap_split_value = subtitle_style['gap_split_value']

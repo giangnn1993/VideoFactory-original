@@ -29,7 +29,7 @@ class CoquiTTS(TextToSpeech):
     ) -> None:
         # Check if the arguments are provided, if not, fetch from environment variables or use defaults
         if voice_id is None:
-            voice_id = os.environ.get('COQUI_VOICE_ID', '6720d486-5d43-4d92-8893-57a1b58b334d'),  # Default voice: 'Dionisio Schuyler'  # noqa
+            voice_id = os.environ.get('COQUI_VOICE_ID', '6720d486-5d43-4d92-8893-57a1b58b334d')  # Default voice: 'Dionisio Schuyler'  # noqa
         if emotion is None:
             emotion = os.environ.get('COQUI_VOICE_EMOTION', 'Neutral')
         if speed is None:
@@ -61,6 +61,7 @@ class CoquiTTS(TextToSpeech):
             print("Error occurred while accessing the audio data:")
             print(e)
             print("Data:", data)
+            print("voice_id:", voice_id)
 
         if response.status_code == 201:
             # Save the response to a file
