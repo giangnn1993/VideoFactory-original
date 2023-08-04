@@ -786,13 +786,13 @@ class WorkflowManager:
         gen_2_video = Path(image_file.parent / (image_file.stem + '.mp4'))
         if not gen_2_video.is_file():
             print('Generating Gen-2 video...')
-            # Get the D-ID Basic API tokens from environment variables
+            # Get the Gen-2 Bearer API tokens from environment variables
             keys = os.environ.get('GEN_2_BEARER_TOKENS')
             # Rotate API keys to ensure a valid key is used for the video generation process
-            self.video_generator.rotate_key(keys=keys)
+            username, gpuCredits, gpuUsageLimit, seconds_left = self.video_generator.rotate_key(keys=keys)
 
-            # Get the profile username
-            username = self.video_generator.get_profile()
+            if gpuCredits == gpuUsageLimit or (gpuCredits > 0 and seconds_left < 4):  # 1s left or seconds_left < 4s
+                self.video_generator.rotate_key(keys=keys)
             if not username:
                 print("Username is missing or empty. Aborting...")
                 return
