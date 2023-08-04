@@ -10,16 +10,12 @@ from pathlib import Path
 
 class SubtitleGenerator:
     def __init__(self,
-                 style=None,
                  model=None,
-                 prepend_string=None,
                  assets_dir=None,
                  input_dir=None,
                  processed_dir=None):
 
         self.model = model or stable_whisper.load_model('base')
-        self.style = style
-        self.prepend_string = prepend_string
 
         # Get the project folder (VideoFactory)
         project_folder = Path(__file__).resolve().parent.parent.parent
@@ -75,21 +71,23 @@ class SubtitleGenerator:
         # Save the modified subtitle file
         subs.save(os.path.join(videos_dir, subtitle_file))
 
-    def prepend_string_to_subtitles(self, subtitle_file, videos_dir=None):
-        if videos_dir is None:
-            videos_dir = self.processed_dir
+    def prepend_string_to_subtitle(self, subtitle_file, prepend_string=None, videos_dir=None):
+        # Load subtitle styling parameters
+        prepend_string = prepend_string or os.environ.get("SUBTITLE_PREPEND_STRING", None)
+        print('Subtitle prepend string:', prepend_string)
+        videos_dir = videos_dir or self.processed_dir
 
         with open(self.assets_dir / 'subtitle-styles.json', 'r') as f:
             prepend_strings = json.load(f)['prepend_strings']
 
         # Check if option is present in the provided options dictionary
-        if self.prepend_string in prepend_strings:
+        if prepend_string in prepend_strings:
             # Open the subtitle file for reading
             subs = pysubs2.load(videos_dir / subtitle_file)
             # Iterate over each line in the subtitle file
             for line in subs:
                 # Prepend the required string to the current line text
-                line.text = prepend_strings[self.prepend_string] + line.text
+                line.text = prepend_strings[prepend_string] + line.text
             # Save the modified subtitle file
             subs.save(videos_dir / subtitle_file)
         else:
@@ -153,7 +151,7 @@ class SubtitleGenerator:
                 # Call modify_text to change the case of the subtitle, default to None
                 self.modify_text(subtitle_file, videos_dir)
                 # Call prepend_string_to_subtitles to prepend_string to the subtitle, default to None
-                self.prepend_string_to_subtitles(subtitle_file, videos_dir)
+                self.prepend_string_to_subtitle(subtitle_file, videos_dir)
                 # Get video dimensions
                 play_res_x, play_res_y = self.get_video_dimensions(input_filepath)
 
@@ -173,18 +171,19 @@ class SubtitleGenerator:
                 subprocess.call(ffmpeg_cmd, shell=True, check=True,
                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    def generate_subtitle(self, input_video):
+    def generate_subtitle(self, input_video, style=None):
         input_video_path = Path(input_video)
         subtitle_file = f'{input_video_path.stem}.ass'
         subtitle_filepath = input_video_path.parent / subtitle_file
         # output_file = f'{input_video_path.stem}_subtitled.mp4'
         # output_filepath = input_video_path.parent / output_file
 
-        # Load subtitle styling parameters from JSON file
-        self.prepend_string = self.prepend_string or os.environ.get("SUBTITLE_PREPEND_STRING", None)
-        self.style = self.style or os.environ.get("SUBTITLE_STYLE", "default")
+        # Load subtitle styling parameters
+        style = style or os.environ.get("SUBTITLE_STYLE", "default")
+        print('Subtitle style:', style)
+
         with open(self.assets_dir / 'subtitle-styles.json', 'r') as f:
-            subtitle_style = json.load(f)["styles"][self.style]
+            subtitle_style = json.load(f)["styles"][style]
             gap_split_value = subtitle_style['gap_split_value']
             gap_merge_value = subtitle_style['gap_merge_value']
             max_words_in_merge = subtitle_style['max_words_in_merge']
@@ -210,12 +209,14 @@ class SubtitleGenerator:
 
         return str(subtitle_filepath)
 
-    def modify_subtitle(self, subtitle_file):
+    def modify_subtitle(self, subtitle_file, style=None):
+        # Load subtitle styling parameters
+        style = style or os.environ.get("SUBTITLE_STYLE", "default")
 
         with open(subtitle_file, 'r', encoding='utf-8') as file:
             text = file.read()
             # Check if the variable 'style' ends with '_ko':
-            if self.style.endswith('_ko'):
+            if style.endswith('_ko'):
                 # Read the .ass file and replace all instances of "{\\k" with "{\\ko":
                 text = text.replace(r"{\k", r"{\ko")
 
@@ -226,7 +227,8 @@ class SubtitleGenerator:
             # Call modify_text to change the case of the subtitle, default to None
             self.modify_text(str(modified_subtitle_file), Path(subtitle_file).parent)
             # Call prepend_string_to_subtitles to prepend_string to the subtitle, default to None
-            self.prepend_string_to_subtitles(str(modified_subtitle_file), Path(subtitle_file).parent)
+            self.prepend_string_to_subtitle(subtitle_file=str(modified_subtitle_file),
+                                            videos_dir=Path(subtitle_file).parent)
 
             return modified_subtitle_file
 
