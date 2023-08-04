@@ -71,7 +71,7 @@ class Gen2Video(VideoGenerator):
             seconds_left = int(gpuCredits / gpuUsageLimit)
             return username, gpuCredits, gpuUsageLimit, seconds_left
         else:
-            raise Exception(f"Failed to fetch profile. Status code: {response.status_code}, Error: {response.text}")
+            print(f"Failed to fetch profile. Status code: {response.status_code}, Error: {response.text}")
 
     # region 1: Upload image
     def step_1_upload_image(self, image_filename):
@@ -160,7 +160,7 @@ class Gen2Video(VideoGenerator):
             dataset_id = dataset_data["id"]
             return dataset_id
         else:
-            raise Exception("Failed to create dataset.")
+            print("Failed to create dataset.")
 
     def step_6_complete_upload_preview(self, preview_upload_id, etag):
         complete_preview_upload_url = self.step_5_complete_upload_preview(preview_upload_id, etag)
@@ -191,7 +191,7 @@ class Gen2Video(VideoGenerator):
             team_id = response.json()["teams"][0]["id"]
             return team_id
         else:
-            raise Exception("Failed to fetch teams data")
+            print("Failed to fetch teams data")
 
     def step_9_send_mp_user_event(self, username, seed, image_prompt, init_image, sessionId=None, interpolate=False):
         sessionId = sessionId or str(uuid.uuid4())
@@ -263,7 +263,7 @@ class Gen2Video(VideoGenerator):
             task_id = response.json()["task"]["id"]
             return task_id
         else:
-            raise Exception("Failed to create task")
+            print("Failed to create task")
 
     def step_11_check_task_status(self, task_id, team_id):
         url = f"https://api.runwayml.com/v1/tasks/{task_id}?asTeamId={team_id}"
@@ -272,7 +272,7 @@ class Gen2Video(VideoGenerator):
             task_status = response.json()["task"]["status"]
             return task_status
         else:
-            raise Exception("Failed to fetch task status")
+            print("Failed to fetch task status")
 
     def step_12_perform_generation(self, task_id, image_prompt, init_image, seed, interpolate=False):
         url = "https://api.runwayml.com/v1/generations"
@@ -298,7 +298,7 @@ class Gen2Video(VideoGenerator):
             generation_id = response.json()["id"]
             return generation_id
         else:
-            raise Exception("Failed to perform generation")
+            print("Failed to perform generation")
 
     def step_13_check_task_status_and_get_url(self, task_id, team_id):
         url = f"https://api.runwayml.com/v1/tasks/{task_id}?asTeamId={team_id}"
