@@ -318,7 +318,7 @@ class Gen2Video(VideoGenerator):
                         and len(task_artifacts) > 0 and "url" in task_artifacts[0]):
                     return task_artifacts[0]["url"]
                 elif task_status == "FAILED":
-                    print(f'Task failed after {attempt} attempts.')
+                    print('\033[91m' + f'Task failed after {attempt} attempts.' + '\033[0m')
                     return
 
             time.sleep(5)  # Wait for 5 seconds before checking the task status again
