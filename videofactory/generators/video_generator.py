@@ -7,6 +7,10 @@ from .apis.video.d_id_video import DidVideo
 from .apis.video.gen_2_video import Gen2Video
 
 
+class LastKeyReachedException(Exception):
+    pass
+
+
 class VideoGenerator:
     VIDGEN_CLASSES = {
         'd-id': DidVideo,
@@ -29,8 +33,9 @@ class VideoGenerator:
         return VidGenClass(key=self.key)
 
     def set_vidgen_provider(self, vidgen_provider) -> None:
-        self.vidgen_provider = vidgen_provider
-        self.vidgen = self._create_vidgen_instance()
+        if self.vidgen_provider != vidgen_provider:
+            self.vidgen_provider = vidgen_provider
+            self.vidgen = self._create_vidgen_instance()
 
     def _required_vidgen_provider(vidgen_provider):
         def decorator(func):
@@ -54,8 +59,12 @@ class VideoGenerator:
         if self.vidgen_provider == 'd-id':
             self.rotate_key_for_d_id(keys, limit)
         elif self.vidgen_provider == 'gen-2':
-            username, gpuCredits, gpuUsageLimit, seconds_left = self.rotate_key_for_gen_2(keys, limit)
-            return username, gpuCredits, gpuUsageLimit, seconds_left
+            try:
+                username, gpuCredits, gpuUsageLimit, seconds_left = self.rotate_key_for_gen_2(keys, current_index, limit=4)  # noqa
+                return username, gpuCredits, gpuUsageLimit, seconds_left
+            except LastKeyReachedException as e:
+                print(e)
+                raise  # Re-raise the exception to propagate it
         else:
             raise ValueError(f'Unsupported video generator: {self.vidgen_provider}')
 
@@ -195,8 +204,8 @@ class VideoGenerator:
 
     # region: Exclusive methods for 'gen-2' only
     @_required_vidgen_provider('gen-2')
-    def rotate_key_for_gen_2(self, keys, limit=4):
-        self.vidgen.headers["Authorization"] = f"Bearer {self.vidgen.key}"
+    def rotate_key_for_gen_2(self, keys, current_index, limit):
+        # self.vidgen.headers["Authorization"] = f"Bearer {self.vidgen.key}"
         username, gpuCredits, gpuUsageLimit, seconds_left = self.get_profile()
 
         while gpuCredits == gpuUsageLimit or (gpuCredits > 0 and seconds_left < limit):  # 1s left or seconds_left<limit
@@ -205,7 +214,13 @@ class VideoGenerator:
             # Check if not already at last key
             if current_index < len(keys) - 1:
                 self.vidgen.key = keys[current_index + 1]
-            self.vidgen.headers["Authorization"] = f"Bearer {self.vidgen.key}"
+            else:
+                # Raise the custom exception when the last key is reached
+                raise LastKeyReachedException('\033[91m' + 'Last key reached. Exiting...' + '\033[0m')
+                # Raise an exception when the last key is reached
+                # raise Exception('\033[91m' + 'Last key reached. Exiting...' + '\033[0m')
+
+            # self.vidgen.headers["Authorization"] = f"Bearer {self.vidgen.key}"
             username, gpuCredits, gpuUsageLimit, seconds_left = self.get_profile()
             print('┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓')
             print(f"Current token: {self.vidgen.key}")
@@ -216,9 +231,11 @@ class VideoGenerator:
         return username, gpuCredits, gpuUsageLimit, seconds_left
 
     @_required_vidgen_provider('gen-2')
-    def get_profile(self):
-        username, gpuCredits, gpuUsageLimit, seconds_left = self.vidgen.step_0_get_profile()
-        print(f"(Step 0) Username: {username}\n"
+    def get_profile(self, key=None):
+        key = key or self.vidgen.key
+
+        username, gpuCredits, gpuUsageLimit, seconds_left = self.vidgen.step_0_get_profile(key=key)
+        print(f"\n(Step 0) Username: {username}\n"
               f"         GPU Credits: {gpuCredits}\n"
               f"         GPU Usage Limit: {gpuUsageLimit}\n"
               f"         Seconds Left: {seconds_left}s")

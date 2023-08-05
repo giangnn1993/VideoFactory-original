@@ -58,10 +58,13 @@ class Gen2Video(VideoGenerator):
         image_filename = input("Enter the image filename or path: ")
         return image_filename
 
-    def step_0_get_profile(self):
-        url = "https://api.runwayml.com/v1/profile"
+    def step_0_get_profile(self, key=None):
+        key = key or self.key
+        headers = self.headers
+        headers["Authorization"] = f"Bearer {key}"
 
-        response = requests.get(url, headers=self.headers)
+        url = "https://api.runwayml.com/v1/profile"
+        response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
             data = response.json()

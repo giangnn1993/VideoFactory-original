@@ -32,8 +32,9 @@ class TTSGenerator:
         return TTSClass(key=self.key)
 
     def set_tts_provider(self, tts_provider) -> None:
-        self.tts_provider = tts_provider
-        self.tts = self._create_tts_instance()
+        if self.tts_provider != tts_provider:
+            self.tts_provider = tts_provider
+            self.tts = self._create_tts_instance()
 
     def generate_audio(self, text: str, **kwargs) -> None:
         self.tts.generate_audio(text, **kwargs)

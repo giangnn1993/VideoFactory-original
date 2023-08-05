@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .generators.text_generator import TextGenerator
 from .generators.image_generator import ImageGenerator
 from .generators.tts_generator import TTSGenerator
-from .generators.video_generator import VideoGenerator
+from .generators.video_generator import VideoGenerator, LastKeyReachedException
 from .generators.subtitle_generator import SubtitleGenerator
 from .generators.thumbnail_generator import ThumbnailGenerator
 
@@ -789,10 +789,11 @@ class WorkflowManager:
             # Get the Gen-2 Bearer API tokens from environment variables
             keys = os.environ.get('GEN_2_BEARER_TOKENS')
             # Rotate API keys to ensure a valid key is used for the video generation process
-            username, gpuCredits, gpuUsageLimit, seconds_left = self.video_generator.rotate_key(keys=keys)
+            try:
+                username, _, _, _ = self.video_generator.rotate_key(keys=keys)
+            except LastKeyReachedException:
+                raise  # Re-raise the exception to propagate it
 
-            if gpuCredits == gpuUsageLimit or (gpuCredits > 0 and seconds_left < 4):  # 1s left or seconds_left < 4s
-                self.video_generator.rotate_key(keys=keys)
             if not username:
                 print("Username is missing or empty. Aborting...")
                 return
@@ -812,6 +813,25 @@ class WorkflowManager:
 
     def generate_multiple_ai_videos_from_images(self, images_dir: Path):
         self.video_generator.set_vidgen_provider('gen-2')
+        error_occurred = False  # Flag to track if an error occurred
+
+        def check_exception(future):
+            nonlocal error_occurred
+            if future.exception() is not None:
+                if isinstance(future.exception(), LastKeyReachedException):
+                    error_occurred = True
+            # if future.exception():
+            #     error_occurred = True
+
+        def process_single_image(png_file):
+            nonlocal error_occurred  # To access the flag variable defined in the outer function
+            with ThreadPoolExecutor() as inner_executor:
+                for repeat_index in range(1, num_repeats + 1):
+                    print(f"Repeat: {repeat_index}/{num_repeats}")
+                    future = inner_executor.submit(self.generate_single_ai_video_from_image, png_file)
+                    check_exception(future)
+                    if error_occurred:  # Check if an error occurred before processing the image
+                        break  # Exit the loop if error_occurred is True
 
         png_files = list(images_dir.glob("*.png"))
         if not png_files:
@@ -825,12 +845,40 @@ class WorkflowManager:
                 except ValueError:
                     print("Invalid input. Please enter a valid integer.")
 
-        def process_single_image(png_file):
-            with ThreadPoolExecutor() as inner_executor:
-                for repeat_index in range(1, num_repeats + 1):
-                    print(f"Repeat: {repeat_index}/{num_repeats}")
-                    inner_executor.submit(self.generate_single_ai_video_from_image, png_file)
-
-        for png_index, png_file in enumerate(png_files, start=1):
-            print(f"\nProcessing: {png_file.name} (File {png_index}/{len(png_files)})")
-            process_single_image(png_file)
+        if num_repeats == 1:
+            while True:
+                try:
+                    images_at_a_time = int(input("Enter the number of images to process at a time: "))
+                    if images_at_a_time <= 0:
+                        print("Please enter a positive integer.")
+                    else:
+                        break
+                except ValueError:
+                    print("Invalid input. Please enter a valid integer.")
+            with ThreadPoolExecutor() as executor:
+                futures = []
+                for png_index, png_file in enumerate(png_files, start=1):
+                    if error_occurred:  # Check if an error occurred before processing the image
+                        break  # Exit the loop if error_occurred is True
+                    print(f"\nProcessing: {png_file.name} (File {png_index}/{len(png_files)})")
+                    future = executor.submit(process_single_image, png_file)
+                    if error_occurred:  # Check if an error occurred before processing the image
+                        break  # Exit the loop if error_occurred is True
+                    futures.append(future)
+                    if png_index % images_at_a_time == 0:
+                        for future in futures:
+                            future.result()
+                        futures = []
+                # Wait for any remaining tasks to complete
+                for future in futures:
+                    future.result()
+        else:
+            for png_index, png_file in enumerate(png_files, start=1):
+                if error_occurred:  # Check if an error occurred before processing the image
+                    break  # Exit the loop if error_occurred is True
+                print(f"\nProcessing: {png_file.name} (File {png_index}/{len(png_files)})")
+                process_single_image(png_file)
+                if error_occurred:  # Check if an error occurred before processing the image
+                    break  # Exit the loop if error_occurred is True
+        if error_occurred:
+            return
