@@ -187,6 +187,19 @@ def set_env_variables(input_string):
     print()
 
 
+def _generate_single_ai_video_from_image(workflow_manager: WorkflowManager):
+    # Call methods to generate talking head video
+    # Prompt User Inputs for Workflow Options
+    while True:
+        image_file = Path(input('Enter the path to the image: ').strip('"'))
+        if image_file.is_file():
+            break
+        else:
+            print("Invalid file path. Please enter a valid path to the image.")
+
+    workflow_manager.generate_video_from_image(image_file)
+
+
 def generate_single_ai_video_from_image(workflow_manager: WorkflowManager):
     # Call methods to generate talking head video
     # Prompt User Inputs for Workflow Options
@@ -197,7 +210,25 @@ def generate_single_ai_video_from_image(workflow_manager: WorkflowManager):
         else:
             print("Invalid file path. Please enter a valid path to the image.")
 
-    workflow_manager.generate_single_ai_video_from_image(image_file)
+    while True:
+        try:
+            num_videos_to_generate = int(input("Enter the number of videos to generate (4 seconds long each): "))
+            if num_videos_to_generate > 0:
+                break
+            else:
+                print("Please enter a positive integer.")
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
+    while True:
+        same_seed_input = input("Do you want to keep the same seed across videos? (y/n): ").lower()
+        if same_seed_input in ['y', 'n']:
+            keep_same_seed = True if same_seed_input == 'y' else False
+            break
+        else:
+            print("Invalid input. Please enter 'y' or 'n'.")
+
+    workflow_manager.generate_single_ai_video_from_image(image_file, num_videos_to_generate, keep_same_seed)
 
 
 def generate_multiple_ai_videos_from_images(workflow_manager: WorkflowManager):

@@ -3,7 +3,8 @@ import shutil
 import subprocess
 from pathlib import Path
 import pandas as pd
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import random
 
 from .generators.text_generator import TextGenerator
 from .generators.image_generator import ImageGenerator
@@ -780,70 +781,69 @@ class WorkflowManager:
         except subprocess.CalledProcessError as e:
             print("Command failed:", e)
 
-    def generate_single_ai_video_from_image(self, image_file: Path):
+    def generate_video_from_image(self, image_file: Path, output_dir=None, output_path=None, seed=None):
         self.video_generator.set_vidgen_provider('gen-2')
 
-        gen_2_video = Path(image_file.parent / (image_file.stem + '.mp4'))
-        if not gen_2_video.is_file():
-            print('Generating Gen-2 video...')
-            # Get the Gen-2 Bearer API tokens from environment variables
-            keys = os.environ.get('GEN_2_BEARER_TOKENS')
-            # Rotate API keys to ensure a valid key is used for the video generation process
-            try:
-                username, _, _, _ = self.video_generator.rotate_key(keys=keys)
-            except LastKeyReachedException:
-                raise  # Re-raise the exception to propagate it
+        print('Generating Gen-2 video...')
+        # Get the Gen-2 Bearer API tokens from environment variables
+        keys = os.environ.get('GEN_2_BEARER_TOKENS')
+        # Rotate API keys to ensure a valid key is used for the video generation process
+        try:
+            username, _, _, _ = self.video_generator.rotate_key(keys=keys)
+        except LastKeyReachedException:
+            raise  # Re-raise the exception to propagate it
 
-            if not username:
-                print("Username is missing or empty. Aborting...")
-                return
-            # Upload the image and get the upload URLs
-            upload_url, preview_upload_url = self.video_generator.upload_image(image_file)
-            if not upload_url:
-                print("Upload URL is missing or empty. Aborting...")
-                return
-            if not preview_upload_url:
-                print("Preview Upload URL is missing or empty. Aborting...")
-                return
+        if not username:
+            print("Username is missing or empty. Aborting...")
+            return
+        # Upload the image and get the upload URLs
+        upload_url, preview_upload_url = self.video_generator.upload_image(image_file)
+        if not upload_url:
+            print("Upload URL is missing or empty. Aborting...")
+            return
+        if not preview_upload_url:
+            print("Preview Upload URL is missing or empty. Aborting...")
+            return
 
-            # Generate the video
-            self.video_generator.generate_video_from_image(image_file, username, upload_url, preview_upload_url)
-        else:
-            print(f'"{gen_2_video}" already exists. Skipping...')
+        # Generate the video
+        return self.video_generator.generate_video_from_image(image_file, username, upload_url, preview_upload_url,
+                                                              output_dir, output_path, seed)
 
     def generate_multiple_ai_videos_from_images(self, images_dir: Path):
         self.video_generator.set_vidgen_provider('gen-2')
         error_occurred = False  # Flag to track if an error occurred
 
         def check_exception(future):
-            nonlocal error_occurred
-            if future.exception() is not None:
-                if isinstance(future.exception(), LastKeyReachedException):
-                    error_occurred = True
-            # if future.exception():
-            #     error_occurred = True
+            nonlocal error_occurred  # To access the flag variable defined in the outer function
+            if future.exception() is not None and isinstance(future.exception(), LastKeyReachedException):
+                error_occurred = True
 
         def process_single_image(png_file):
-            nonlocal error_occurred  # To access the flag variable defined in the outer function
             with ThreadPoolExecutor() as inner_executor:
+                nonlocal error_occurred  # To access the flag variable defined in the outer function
+                futures = []
                 for repeat_index in range(1, num_repeats + 1):
                     print(f"Repeat: {repeat_index}/{num_repeats}")
-                    future = inner_executor.submit(self.generate_single_ai_video_from_image, png_file)
+                    future = inner_executor.submit(self.generate_video_from_image, png_file)
+                    futures.append(future)
+
+                # Check for exceptions
+                for future in as_completed(futures):
                     check_exception(future)
-                    if error_occurred:  # Check if an error occurred before processing the image
-                        break  # Exit the loop if error_occurred is True
+                    if error_occurred:
+                        break
 
         png_files = list(images_dir.glob("*.png"))
         if not png_files:
             print("No PNG files found in the folder.")
             return
-        else:
-            while True:
-                try:
-                    num_repeats = int(input("Enter the number of times to process each image: "))
-                    break
-                except ValueError:
-                    print("Invalid input. Please enter a valid integer.")
+
+        while True:
+            try:
+                num_repeats = int(input("Enter the number of times to process each image: "))
+                break
+            except ValueError:
+                print("Invalid input. Please enter a valid integer.")
 
         if num_repeats == 1:
             while True:
@@ -855,30 +855,77 @@ class WorkflowManager:
                         break
                 except ValueError:
                     print("Invalid input. Please enter a valid integer.")
+
             with ThreadPoolExecutor() as executor:
                 futures = []
                 for png_index, png_file in enumerate(png_files, start=1):
                     if error_occurred:  # Check if an error occurred before processing the image
                         break  # Exit the loop if error_occurred is True
+
                     print(f"\nProcessing: {png_file.name} (File {png_index}/{len(png_files)})")
                     future = executor.submit(process_single_image, png_file)
-                    if error_occurred:  # Check if an error occurred before processing the image
-                        break  # Exit the loop if error_occurred is True
                     futures.append(future)
+
                     if png_index % images_at_a_time == 0:
                         for future in futures:
                             future.result()
                         futures = []
+
+                    if error_occurred:  # Check if an error occurred before processing the image
+                        break  # Exit the loop if error_occurred is True
+
                 # Wait for any remaining tasks to complete
                 for future in futures:
                     future.result()
+
         else:
-            for png_index, png_file in enumerate(png_files, start=1):
-                if error_occurred:  # Check if an error occurred before processing the image
-                    break  # Exit the loop if error_occurred is True
-                print(f"\nProcessing: {png_file.name} (File {png_index}/{len(png_files)})")
-                process_single_image(png_file)
-                if error_occurred:  # Check if an error occurred before processing the image
-                    break  # Exit the loop if error_occurred is True
+            with ThreadPoolExecutor() as executor:
+                for png_index, png_file in enumerate(png_files, start=1):
+                    if error_occurred:  # Check if an error occurred before processing the image
+                        break  # Exit the loop if error_occurred is True
+
+                    print(f"\nProcessing: {png_file.name} (File {png_index}/{len(png_files)})")
+                    process_single_image(png_file)
+
         if error_occurred:
             return
+
+    def generate_single_ai_video_from_image(self, image_file: Path, num_videos_to_generate: int, keep_same_seed: bool):
+        self.video_generator.set_vidgen_provider('gen-2')
+
+        seed = self.video_generator.generate_random_seed()
+        init_video_file = self.generate_video_from_image(image_file=image_file, seed=seed)
+        input_videos = [str(init_video_file)]
+
+        if num_videos_to_generate > 1:
+            last_frame = init_video_file.with_name(f'{init_video_file.stem}_iteration_1_last_frame.png')
+            last_frame = self.video_editor.extract_last_frame(video_file=init_video_file, output_path=last_frame)
+            for i in range(2, num_videos_to_generate + 1):
+                if not keep_same_seed:
+                    seed = self.video_generator.generate_random_seed()
+                video_file_name = f'{image_file.stem}_{seed}_iteration_{i}.mp4'
+                video_file = init_video_file.with_name(video_file_name)
+                self.generate_video_from_image(image_file=last_frame, seed=seed, output_path=video_file)
+
+                input_videos.append(str(video_file))
+                Path(last_frame).unlink()
+
+                # Check if it's the final iteration
+                if i == num_videos_to_generate:
+                    break
+
+                last_frame_name = f"{image_file.stem}_{seed}_iteration_{i}_last_frame.png"
+                last_frame = init_video_file.with_name(last_frame_name)
+                self.video_editor.extract_last_frame(video_file=video_file, output_path=last_frame)
+
+            # Determine the base filename
+            base_filename = f'{init_video_file.stem}_joined_{num_videos_to_generate}_iterations.mp4'
+            # Update the base filename if keep_same_seed is False
+            if not keep_same_seed:
+                base_filename = f'{image_file.stem}_joined_{num_videos_to_generate}_iterations.mp4'
+            # Generate the output_filepath using the base filename
+            output_filepath = init_video_file.with_name(str(base_filename))
+            print('\nJoining the videos...')
+            joined_video = self.video_editor.join_videos_without_audio(input_videos=input_videos,
+                                                                       output_filepath=output_filepath)
+            print('\033[92m' + f'Videos successfully joined and saved to "{joined_video}"' + '\033[0m')
