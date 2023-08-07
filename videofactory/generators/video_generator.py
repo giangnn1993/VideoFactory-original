@@ -296,7 +296,7 @@ class VideoGenerator:
     @_required_vidgen_provider('gen-2')
     def generate_video_from_image(self, image_path: Path, username: str,
                                   upload_url: str, preview_upload_url: str,
-                                  output_dir: str = None, seed=None):
+                                  output_dir: str = None, output_path: str = None, seed=None) -> Path:
         seed = seed or self.vidgen.generate_random_seed()
 
         # Step 1: Get the team ID
@@ -323,9 +323,19 @@ class VideoGenerator:
         print(f'(Step 13) Generated video URL: {generated_video_url}')
 
         # Step 6: Download the video
-        output_dir = output_dir or image_path.parent
-        output_path = output_dir / f"{image_path.stem}_{seed}.mp4"
+        if output_path is None:
+            if output_dir is None:
+                output_dir = image_path.parent
+            output_path = output_dir / f"{image_path.stem}_{seed}.mp4"
+        else:
+            output_path = Path(output_path)
         self.vidgen.download_video(generated_video_url, output_path)
+
+        return output_path
+
+    @_required_vidgen_provider('gen-2')
+    def generate_random_seed(self) -> int:
+        return self.vidgen.generate_random_seed()
     # endregion
 
 
