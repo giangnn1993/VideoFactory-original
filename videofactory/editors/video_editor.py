@@ -234,6 +234,9 @@ class VideoEditor:
         return mp4_output_wm_filepath
 
     def join_videos(self, input_videos, output_filepath=None):
+        if not output_filepath:
+            output_filepath = "output.mp4"
+
         # Create a string of input options for FFmpeg
         input_options = ""
         for input_video in input_videos:
@@ -253,7 +256,60 @@ class VideoEditor:
             f'-map "[outv]" -map "[outa]" \"{output_filepath}\" -y'
         )
 
-        # Execute the FFmpeg command using os.system
+        # Execute the FFmpeg command
+        # print(command)
+        self.run_command(command)
+
+        return output_filepath
+
+    def extract_last_frame(self, video_file, output_path=None) -> Path:
+        if output_path is None:
+            output_path = Path(video_file).parent / Path(video_file).stem
+
+        # Use pathlib for paths and avoid string formatting
+        output_path = Path(output_path)
+        video_file = Path(video_file)
+
+        command = [
+            'ffmpeg',
+            '-sseof', '-1',
+            '-i', str(video_file),
+            '-update', '1',
+            '-q:v', '1',
+            str(output_path.with_suffix('.png')),
+            '-y'
+        ]
+
+        # Execute the command
+        self.run_command(command)
+
+        # Return the output path
+        return output_path.with_suffix('.png')
+
+    def join_videos_without_audio(self, input_videos, output_filepath=None):
+        if not output_filepath:
+            output_filepath = "output.mp4"
+
+        # Create a string of input options for FFmpeg
+        input_options = ""
+        for input_video in input_videos:
+            input_options += f'-i "{input_video}" '
+
+        # Construct the FFmpeg command to join the videos without audio
+        filter_complex = ""
+
+        for i in range(len(input_videos)):
+            if i == len(input_videos) - 1:
+                filter_complex += f" concat=n={len(input_videos)}:v=1 [v]"
+            else:
+                filter_complex += f" [{i}:v]"
+
+        command = (
+            f'ffmpeg {input_options}-filter_complex "{filter_complex}" '
+            f'-map "[v]" "{output_filepath}" -y'
+        )
+
+        # Execute the FFmpeg command
         # print(command)
         self.run_command(command)
 
