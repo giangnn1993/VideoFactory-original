@@ -4,7 +4,6 @@ import subprocess
 from pathlib import Path
 import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import random
 
 from .generators.text_generator import TextGenerator
 from .generators.image_generator import ImageGenerator
