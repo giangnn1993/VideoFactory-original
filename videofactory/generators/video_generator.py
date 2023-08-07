@@ -2,6 +2,7 @@ import json
 from collections import defaultdict
 from typing import Dict
 from pathlib import Path
+import threading
 
 from .apis.video.d_id_video import DidVideo
 from .apis.video.gen_2_video import Gen2Video
@@ -21,6 +22,7 @@ class VideoGenerator:
         self.vidgen_provider = vidgen_provider
         self.key = key
         self.vidgen = self._create_vidgen_instance()
+        self.key_lock = threading.Lock()
 
     def _create_vidgen_instance(self):
         if not self.vidgen_provider:
@@ -47,26 +49,27 @@ class VideoGenerator:
         return decorator
 
     def rotate_key(self, keys, limit=1, delimiter=','):
-        # Split the keys string into a list using the specified delimiter
-        keys = keys.split(delimiter)
+        with self.key_lock:
+            # Split the keys string into a list using the specified delimiter
+            keys = keys.split(delimiter)
 
-        # If the provided key is in the list of keys, set the current_index to its index
-        # Otherwise, set the current_index to 0 (the first key in the list)
-        current_index = keys.index(self.vidgen.key) if self.vidgen.key in keys else 0
+            # If the provided key is in the list of keys, set the current_index to its index
+            # Otherwise, set the current_index to 0 (the first key in the list)
+            current_index = keys.index(self.vidgen.key) if self.vidgen.key in keys else 0
 
-        self.vidgen.key = keys[current_index]
+            self.vidgen.key = keys[current_index]
 
-        if self.vidgen_provider == 'd-id':
-            self.rotate_key_for_d_id(keys, limit)
-        elif self.vidgen_provider == 'gen-2':
-            try:
-                username, gpuCredits, gpuUsageLimit, seconds_left = self.rotate_key_for_gen_2(keys, current_index, limit=4)  # noqa
-                return username, gpuCredits, gpuUsageLimit, seconds_left
-            except LastKeyReachedException as e:
-                print(e)
-                raise  # Re-raise the exception to propagate it
-        else:
-            raise ValueError(f'Unsupported video generator: {self.vidgen_provider}')
+            if self.vidgen_provider == 'd-id':
+                self.rotate_key_for_d_id(keys, limit)
+            elif self.vidgen_provider == 'gen-2':
+                try:
+                    username, gpuCredits, gpuUsageLimit, seconds_left = self.rotate_key_for_gen_2(keys, current_index, limit=4)  # noqa
+                    return username, gpuCredits, gpuUsageLimit, seconds_left
+                except LastKeyReachedException as e:
+                    print(e)
+                    raise  # Re-raise the exception to propagate it
+            else:
+                raise ValueError(f'Unsupported video generator: {self.vidgen_provider}')
 
     # region: Exclusive methods for 'd-id' only
     @_required_vidgen_provider('d-id')
