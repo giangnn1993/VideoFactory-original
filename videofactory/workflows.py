@@ -780,7 +780,8 @@ class WorkflowManager:
         except subprocess.CalledProcessError as e:
             print("Command failed:", e)
 
-    def generate_video_from_image(self, image_file: Path, output_dir=None, output_path=None, seed=None):
+    def generate_video_from_image(self, image_file: Path, output_dir=None, output_path=None,
+                                  seed=None, interpolate=True):
         self.video_generator.set_vidgen_provider('gen-2')
 
         print('Generating Gen-2 video...')
@@ -806,7 +807,7 @@ class WorkflowManager:
 
         # Generate the video
         return self.video_generator.generate_video_from_image(image_file, username, upload_url, preview_upload_url,
-                                                              output_dir, output_path, seed)
+                                                              output_dir, output_path, seed, interpolate)
 
     def generate_multiple_ai_videos_from_images(self, images_dir: Path):
         self.video_generator.set_vidgen_provider('gen-2')
@@ -904,7 +905,7 @@ class WorkflowManager:
                     seed = self.video_generator.generate_random_seed()
                 video_file_name = f'{image_file.stem}_{seed}_iteration_{i}.mp4'
                 video_file = init_video_file.with_name(video_file_name)
-                self.generate_video_from_image(image_file=last_frame, seed=seed, output_path=video_file)
+                self.generate_video_from_image(image_file=last_frame, output_path=video_file, seed=seed)
 
                 input_videos.append(str(video_file))
                 Path(last_frame).unlink()

@@ -299,7 +299,8 @@ class VideoGenerator:
     @_required_vidgen_provider('gen-2')
     def generate_video_from_image(self, image_path: Path, username: str,
                                   upload_url: str, preview_upload_url: str,
-                                  output_dir: str = None, output_path: str = None, seed=None) -> Path:
+                                  output_dir: str = None, output_path: str = None,
+                                  seed=None, interpolate=False) -> Path:
         seed = seed or self.vidgen.generate_random_seed()
 
         # Step 1: Get the team ID
@@ -307,17 +308,18 @@ class VideoGenerator:
         print(f'(Step 8) Team ID: {team_id}')
 
         image_prompt = init_image = preview_upload_url
-        self.vidgen.step_9_send_mp_user_event(username, seed, image_prompt, init_image)
+        self.vidgen.step_9_send_mp_user_event(username, seed, image_prompt, init_image, interpolate=interpolate)
 
         # Step 2: Create a task
-        task_id = self.vidgen.step_10_create_task(team_id, seed, image_prompt, init_image)
+        task_id = self.vidgen.step_10_create_task(team_id, seed, image_prompt, init_image, interpolate=interpolate)
         print(f'(Step 10) Task ID: {task_id}')
         task_status = self.vidgen.step_11_check_task_status(task_id, team_id)
         print(f'(Step 11) Task status: {task_status}')
 
         image_prompt = init_image = upload_url
         # Step 4: Perform generation
-        generation_id = self.vidgen.step_12_perform_generation(task_id, image_prompt, init_image, seed)
+        generation_id = self.vidgen.step_12_perform_generation(task_id, image_prompt, init_image,
+                                                               seed, interpolate=interpolate)
         print(f'(Step 12) Generation ID: {generation_id}')
         print(f'Seed: {seed}')
 
